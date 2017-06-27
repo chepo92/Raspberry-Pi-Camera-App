@@ -1,0 +1,61 @@
+To install PiCameraApp
+
+Some steps may be unnecessary, I documented them as I did them
+
+Get img for SD card from  Raspbian Jessie with PIXEL from https://www.raspberrypi.org/downloads/raspbian/
+
+1. Enable Camera, SSH & VNC
+
+> sudo raspi-config
+In interfacing options -> Enable Camera
+                     For ease of access
+                     -> enable SSH
+                     -> enable VNC
+
+2. Get your ip address
+> ifconfig
+
+From PC VNC (www.realvnc.com) in or ssh (Winscp & Putty) to make it easier to copy paste etc
+
+Install some modules :
+
+> sudo apt-get install build-essential
+
+> sudo apt-get install tk-dev
+
+> sudo apt-get install python-wxgtk2.8 python-wxtools wx2.8-i18n libwxgtk2.8-dev libgtk2.0-dev
+
+> sudo apt-get install python-imaging-tk
+
+> sudo apt-get install python-tk
+
+> sudo apt-get install python3-tk
+> sudo apt-get install tk tcl
+
+Install Python Dependancies
+>pip install –upgrade pip
+
+picamera
+The python interface to the PiCamera hardware. Can get it at https://pypi.python.org/pypi/picamera/1.10
+
+> sudo python -m pip install picamera
+
+RPi.GPIO
+Required to toggle the LED on the camera. Can get it at http://www.raspberrypi-spy.co.uk/2012/05/install-rpi-gpio-python-library/
+> sudo apt-get install rpi.gpio
+
+The Python Image Library.
+> sudo python –m pip install pillow 
+
+Python wxWidgets
+> sudo python -m pip install wxpython
+
+______________________________
+Would not launch so I dod this and Viola!
+> sudo apt-get update
+
+> sudo apt-get upgrade
+
+
+Launch App
+> sudo python ./PiCameraApp.py
