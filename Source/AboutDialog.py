@@ -30,8 +30,8 @@ from PIL import Image, ImageTk
 NoRequire = False
 try:
 	from pkg_resources import require
-except ImportError:
-	print "Cannot import 'require' from 'pkg_resources'"
+except ImportError as imp_err:
+	print "Cannot import 'require' from 'pkg_resources':\n {0}".format(imp_err)
 	NoRequire = True	
 	
 from NotePage import BasicNotepage

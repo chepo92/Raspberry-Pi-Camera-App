@@ -38,8 +38,8 @@ try:
 	import picamera
 	from picamera import *
 	import picamera.array
-except ImportError:
-	raise ImportError("You do not seem to have PiCamera installed")
+except ImportError as imp_err:
+	raise ImportError("You do not seem to have PiCamera installed:\n{0}".format(imp_err))
 
 try:
 	from Tkinter import *
@@ -57,8 +57,8 @@ import 	tkFont
 try:
 	import PIL
 	from PIL import Image, ImageTk, ExifTags
-except ImportError:
-	raise ImportError("You do not seem to have the Python Imaging Library (PIL) installed")
+except ImportError as imp_err:
+	raise ImportError("You do not seem to have the Python Imaging Library (PIL) installed:\n{0}".format(imp_err))
 
 from 	AboutDialog import *
 from 	PreferencesDialog import *

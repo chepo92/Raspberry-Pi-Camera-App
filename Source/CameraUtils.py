@@ -28,8 +28,8 @@ import tkFileDialog
 try:
 	import PIL
 	from PIL import Image, ImageTk, ExifTags
-except ImportError:
-	raise ImportError("You do not seem to have the Python Imaging Library (PIL) installed")
+except ImportError as imp_err:
+	raise ImportError("You do not seem to have the Python Imaging Library (PIL) installed:\n {0}".format(imp_err))
 
 from Utils import OnOff, EvenOdd
 
