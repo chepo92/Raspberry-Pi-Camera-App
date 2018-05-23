@@ -105,6 +105,7 @@ from	FinerControl import *
 from	Exposure import *
 from	Timelapse import *
 from	Utils import *
+from    CameraOutputStream import *
 
 #
 # Main PiCameraApp Window
@@ -798,20 +799,24 @@ class PiCameraApp ( Frame ):
 			self.TakeVideo.config(text='Stop')
 			self.time = time()
 			#### TODO: do this as a stream. Can we then play it in
-			#### 	'realtime' to the user as it's being recorded?
+			####	'realtime' to the user as it's being recorded?
 			# Check what format the video is processed as. Change the
 			# parameters accordingly.
 			self.VidFormat = PreferencesDialog.DefaultVideoFormat
 			self.TempFile = PreferencesDialog.DefaultVideoDir + '/__TMP__.' + \
 									 self.VidFormat
+			self.LogFileExtention = '.timestamp.log'
+			
+			self.cameraOutputStream = CameraOutputStream(self.camera, self.TempFile,
+								     self.LogFileExtention)
 			if self.VidFormat == 'h264':
-				self.camera.start_recording(output=self.TempFile,
+				self.camera.start_recording(output=self.cameraOutputStream,
 					format=self.VidFormat,profile=H264.Profile,level=H264.Level,
 					intra_period=H264.IntraPeriod,intra_refresh=H264.IntraRefresh,
 					inline_headers=H264.InlineHeaders,sei=H264.SEI,
 					sps_timing=H264.SPSTiming,motion_output=H264.MotionOutput)
 			else:	# generic - we can use anything
-				self.camera.start_recording(output=self.TempFile,
+				self.camera.start_recording(output=self.cameraOutputStream,
 					format=self.VidFormat)
 			self.photoCanvas.itemconfigure('capture',state='normal')
 			self.after(50,self.UpdateCaptureInProgress)
@@ -833,8 +838,13 @@ class PiCameraApp ( Frame ):
 			# This is wrong. I should rework this
 			if filename:
 				os.rename(self.TempFile,filename)
+				os.rename(self.TempFile + self.LogFileExtention,
+					  filename + self.LogFileExtention)
 			else:
-				try:		os.remove(self.TempFile)
+				try:
+					os.remove(self.TempFile)
+					os.remove(self.TempFile + self.LogFileExtention)
+				
 				except:	pass
 	def UpdateCaptureInProgress ( self ):
 		if not self.InCaptureVideo: return
