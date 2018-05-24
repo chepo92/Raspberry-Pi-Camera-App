@@ -65,3 +65,13 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
