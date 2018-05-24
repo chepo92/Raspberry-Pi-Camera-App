@@ -392,6 +392,13 @@ class PiCameraApp ( Frame ):
 		b.config(state='disabled')
 		ToolTip(b, msg=13)
 
+		## TODO: Need to make a tooltip
+		self.WriteTimestamps = MyBooleanVar(False)
+		b = ttk.Checkbutton(ButtonFrame, text='Timestamps', variable=self.WriteTimestamps)
+		b.grid(row=0,column=5,sticky='W')
+		#b.config(state='disabled')
+		ToolTip(b, msg=15)
+
 		self.pw.add(self.TopFrame)
 		self.pw.add(BottomFrame)
 
@@ -805,7 +812,10 @@ class PiCameraApp ( Frame ):
 			self.VidFormat = PreferencesDialog.DefaultVideoFormat
 			self.TempFile = PreferencesDialog.DefaultVideoDir + '/__TMP__.' + \
 									 self.VidFormat
-			self.LogFileExtention = '.timestamp.log'
+
+			self.LogFileExtention = None
+			if self.WriteTimestamps.get():
+				self.LogFileExtention = '.timestamp.log'
 			
 			self.cameraOutputStream = CameraOutputStream(self.camera, self.TempFile,
 								     self.LogFileExtention)
