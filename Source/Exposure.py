@@ -496,16 +496,16 @@ class Exposure ( BasicNotepage ):
 									  else 'DataLabel.TLabel')
 		return num
 	def ValidateFixedRange ( self, EntryIfAllowed ):
-		rate = self.ValidateEntry(EntryIfAllowed, 1.0/6.0, 90.0 )
+		rate = self.ValidateEntry(EntryIfAllowed, 1.0/6.0, 120.0 )
 		if rate != None:
 			self.camera.framerate = rate
 			self.ValidateShutterSpeed(None)
 		return True
 	def ValidateRange ( self, fromText, toText ):
-		fromVal = self.ValidateEntry(fromText, 1.0/6.0, 90.0 )
-		toVal = self.ValidateEntry(toText, 1.0/6.0, 90.0 )
+		fromVal = self.ValidateEntry(fromText, 1.0/6.0, 120.0 )
+		toVal = self.ValidateEntry(toText, 1.0/6.0, 120.0 )
 		if fromVal != None and toVal != None and \
-			fromVal >= 1.0/6.0 and fromVal < toVal and toVal <= 90.0:
+			fromVal >= 1.0/6.0 and fromVal < toVal and toVal <= 120.0:
 			self.camera.framerate_range = (fromVal,toVal)
 			self.ValidateShutterSpeed(None)
 			self.FrameRate.config(style='DataLabel.TLabel')

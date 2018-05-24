@@ -247,7 +247,7 @@ framerate delta is fixed at 10.$
 The edit field allows the use of the '/' character to specify a fraction, e.g. 
 entering 1/6 is interpreted as 0.16666667, or 15/2.5 is 6.0.\n\n
 The lowest framerate range 'To' value must be greater than the framerate range 'From'
-value, the highest framerate range 'To' value is fixed at 90. $
+value, the highest framerate range 'To' value is fixed at 120 (however 90 is the max supported). $
 
 # ------------- Advanced Tab ----------------
 350 : Select Auto sensor mode (default).\n\nThis is an advanced property which can be 
