@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/pi/.virtualenvs/cv/bin/python3 -OO
 # -*- coding: utf-8 -*-
 
 '''
@@ -123,6 +123,7 @@ class PiCameraApp ( Frame ):
 		self.ControlMapping = ControlMapping()
 
 		self.camera = camera
+		self.camera.color_effects = (128, 128)
 		self.camera.start_preview(fullscreen=False,window=(0,0,10,10))
 
 		self.title = title
@@ -816,15 +817,22 @@ class PiCameraApp ( Frame ):
 			self.LogFileExtention = None
 			if self.WriteTimestamps.get():
 				self.LogFileExtention = '.timestamp.log'
+
+			if self.VidFormat == 'h264':			    
+				self.cameraOutputStream = CameraOutputStream(self.camera, self.TempFile,
+									     self.LogFileExtention)
 			
-			self.cameraOutputStream = CameraOutputStream(self.camera, self.TempFile,
-								     self.LogFileExtention)
-			if self.VidFormat == 'h264':
 				self.camera.start_recording(output=self.cameraOutputStream,
 					format=self.VidFormat,profile=H264.Profile,level=H264.Level,
 					intra_period=H264.IntraPeriod,intra_refresh=H264.IntraRefresh,
 					inline_headers=H264.InlineHeaders,sei=H264.SEI,
 					sps_timing=H264.SPSTiming,motion_output=H264.MotionOutput)
+			elif self.VidFormat == 'yuv':
+				self.cameraOutputStream = CameraYUVStream(self.camera,
+									  self.TempFile,
+									  self.LogFileExtention)
+				self.camera.start_recording(output=self.cameraOutputStream, format='yuv')
+				
 			else:	# generic - we can use anything
 				self.camera.start_recording(output=self.cameraOutputStream,
 					format=self.VidFormat)
@@ -847,9 +855,13 @@ class PiCameraApp ( Frame ):
 				initialfile = filename )
 			# This is wrong. I should rework this
 			if filename:
-				os.rename(self.TempFile,filename)
-				os.rename(self.TempFile + self.LogFileExtention,
-					  filename + self.LogFileExtention)
+				try:
+					os.rename(self.TempFile,filename)
+				except:
+					pass
+				if self.LogFileExtention:
+					os.rename(self.TempFile + self.LogFileExtention,
+						  filename + self.LogFileExtention)
 			else:
 				try:
 					os.remove(self.TempFile)
@@ -1136,7 +1148,7 @@ def Run ():
 		camera.sensor_mode = 0	# go back to auto mode
 	except PiCameraError:
 		print ( "Error creating PiCamera instance! Shutting down.\n\nPress any key..." )
-		raw_input()
+		input()
 		return
 
 	win.minsize(1024,768)
