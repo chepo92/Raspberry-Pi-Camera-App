@@ -6,8 +6,8 @@ import tkinter as tk
 from time import sleep
 from PIL import Image, ImageTk
 from threading import Thread, Event
+from imagesocket import ImageSocket
 from queue import Queue, Empty, PriorityQueue
-
 
 class tracker(object):
     def __init__(self, posX, posY):
@@ -116,6 +116,8 @@ class VideoOutput(Thread):
         self.mog = None
         self.gmg = None
         self.kernel = None
+        self.socket = NumpySocket()
+        self.socket.startServer('142.66.96.249', 1132)
         self.start()
 
     def write(self, buf):
@@ -150,14 +152,15 @@ class VideoOutput(Thread):
     def splitFrame(self, buf, frameNum):
         np_array = np.frombuffer(buf, dtype=np.uint8, count=self.width*self.height)
 
+        self.socket.sendNumpy(np.reshape(np_array, (self.height, self.width)))
         #if frameNum % 5 == 0:
         #gray, centers = self.backgroundFrameSub(np_array, threshold=10, minimum_area=300)
-            #gray, centers = self.blobDetection(np_array, threshold=10, minimum_area=300)
-            #gray, centers = self.mogSubtraction(np_array, threshold=16, minimum_area=300)
-            #self.eventTracker.report(centers, frameNum)
+        #gray, centers = self.blobDetection(np_array, threshold=10, minimum_area=300)
+        #gray, centers = self.mogSubtraction(np_array, threshold=16, minimum_area=300)
+        #self.eventTracker.report(centers, frameNum)
         
-            #self.cvWrite(np_array, '%s.%i.yuv.jpg' % (self.filename, frameNum))
-            #self.cvWrite(gray, '%s.tracking.%i.yuv.jpg' % (self.filename, frameNum))
+        #self.cvWrite(np_array, '%s.%i.yuv.jpg' % (self.filename, frameNum))
+        #self.cvWrite(gray, '%s.tracking.%i.yuv.jpg' % (self.filename, frameNum))
 
 
     def backgroundFrameSub(self, np_buffer, threshold, minimum_area):
