@@ -834,8 +834,10 @@ class PiCameraApp ( Frame ):
 				self.camera.start_recording(output=self.cameraOutputStream, format='yuv')
 				
 			else:	# generic - we can use anything
+				self.cameraOutputStream = CameraOutputStream(self.camera, self.TempFile,
+									     self.LogFileExtention)
 				self.camera.start_recording(output=self.cameraOutputStream,
-					format=self.VidFormat)
+							    format=self.VidFormat)
 			self.photoCanvas.itemconfigure('capture',state='normal')
 			self.after(50,self.UpdateCaptureInProgress)
 		else:

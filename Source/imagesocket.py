@@ -35,21 +35,35 @@ class ImageSocket():
         self.socket.close()
 
 
-    def send(self, buf):
+    def send(self, buf, length):
         if self.type is not "server":
             print("Not setup as a server")
             return
 
-        size = len(buf)
-        byteValue = []
-        byteValue.append(size  & 255)
-        byteValue.append((size & (255 <<  8)) >>  8)
-        byteValue.append((size & (255 << 16)) >> 16)
-        byteValue.append((size & (255 << 24)) >> 24)
-        buf = bytes(byteValue) + buf
+        # size = len(buf)
+        # byteValue = []
+        # byteValue.append(size  & 255)
+        # byteValue.append((size & (255 <<  8)) >>  8)
+        # byteValue.append((size & (255 << 16)) >> 16)
+        # byteValue.append((size & (255 << 24)) >> 24)
         try:
-            self.socket.sendall(out)
-        except Exception:
+            #buf = self.intToBytes(cols) + self.intToBytes(rows) + buf
+            buf = self.intToBytes(length) + buf
+
+            total_sent = 0
+            while total_sent < length:
+                sent = self.socket.send(buf[total_sent:])
+                if sent == 0:
+                    break
+                total_sent += sent
+        except Exception as e:
+            print(e)
+            exit()
+            
+        try:
+            self.socket.sendall(buf)
+        except Exception as e:
+            print(e)
             exit()
         
     def sendNumpy(self, image):
@@ -95,7 +109,7 @@ class ImageSocket():
         self.client_connection.close()
 
         
-    def intToBytes(integer):
+    def intToBytes(self, integer):
         bytesValue = []
         bytesValue.append(integer  & 255)
         bytesValue.append((integer & (255 <<  8)) >>  8)
@@ -104,7 +118,7 @@ class ImageSocket():
         return bytes(bytesValue)
         
         
-    def bytesToInt(byte):
+    def bytesToInt(self, byte):
         num  = byte[0]
         num += byte[1] << 8
         num += byte[2] << 16
@@ -127,8 +141,8 @@ class ImageSocket():
                 break
             while True:
                 if length is None:
-                    cols = bytesToInt(buf[:4])
-                    rows  = bytesToInt(buf[4:8])
+                    cols = self.bytesToInt(buf[:4])
+                    rows  = self.bytesToInt(buf[4:8])
                     length = rows*cols
                     buf = buf[8:]
 
@@ -161,7 +175,7 @@ class ImageSocket():
                     # length += buf[1] << 8
                     # length += buf[2] << 16
                     # length += buf[3] << 24
-                    length = bytesToInt(buf[:4])
+                    length = self.bytesToInt(buf[:4])
                     buf = buf[4:]
 
                 if len(buf) < length:

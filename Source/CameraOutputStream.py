@@ -100,7 +100,7 @@ class EventTracker(object):
 
 
 class VideoOutput(Thread):
-    def __init__(self, filename, height, width):
+    def __init__(self, filename, height, width, port):
         super(VideoOutput, self).__init__()
         self.maxSize = 32
         self.event = Event()
@@ -116,8 +116,15 @@ class VideoOutput(Thread):
         self.mog = None
         self.gmg = None
         self.kernel = None
-        self.socket = NumpySocket()
-        self.socket.startServer('142.66.96.249', 1132)
+        self.socket = ImageSocket()
+        self.socket1 = ImageSocket()
+        self.socket2 = ImageSocket()
+        self.socket3 = ImageSocket()
+        #self.socket.startServer('142.66.96.249', 1132)
+        self.socket.startServer('169.254.227.206', port)
+        #self.socket1.startServer('169.254.227.206', port)
+        #self.socket2.startServer('169.254.227.206', port)
+        #self.socket3.startServer('169.254.227.206', port)
         self.start()
 
     def write(self, buf):
@@ -132,7 +139,7 @@ class VideoOutput(Thread):
             except Empty:
                 pass
             else:
-                if self.backgroundFrame is None:
+                if self.backgroundFrame is not None:
                     self.backgroundFrame = np.frombuffer(buf, dtype=np.uint8, count=self.width*self.height)
                     self.backgroundFrame = np.reshape(self.backgroundFrame, (self.height, self.width))
                     self.backgroundFrame = cv2.GaussianBlur(self.backgroundFrame, (5, 5), 0)
@@ -150,9 +157,31 @@ class VideoOutput(Thread):
             
                 
     def splitFrame(self, buf, frameNum):
-        np_array = np.frombuffer(buf, dtype=np.uint8, count=self.width*self.height)
+        #np_array = np.frombuffer(buf, dtype=np.uint8, count=self.width*self.height)
 
-        self.socket.sendNumpy(np.reshape(np_array, (self.height, self.width)))
+        #self.socket.sendNumpy(np.reshape(np_array, (self.height, self.width)))
+        length = self.width * self.height
+        if length == 0:
+            length = len(buf)
+
+
+        # Sends 1/3rd of the frames to the slave pi, and keeps 2/3rds locally to process
+        if(frameNum % 3 == 0):
+            self.socket.send(buf,  length)
+        # elif(frameNum % 16 == 4):
+        #     self.socket1.send(buf, length)
+        # elif(frameNum % 16 == 8):
+        #     self.socket2.send(buf, length)
+        # elif(frameNum % 16 == 12):
+        #     self.socket3.send(buf, length)
+        else:
+            image = np.frombuffer(buf, dtype=np.uint8, count=length)
+            image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
+            #image = cv2.GaussianBlur(image, (5,5), 0)
+            frame, _ = self.backgroundFrameSub(image, 16, 300)
+            cv2.imwrite('testing.{}.jpg'.format(frameNum), image)
+            cv2.imwrite('testing.frame{}.jpg'.format(frameNum), frame)
+        #print(self.ident)
         #if frameNum % 5 == 0:
         #gray, centers = self.backgroundFrameSub(np_array, threshold=10, minimum_area=300)
         #gray, centers = self.blobDetection(np_array, threshold=10, minimum_area=300)
@@ -164,8 +193,11 @@ class VideoOutput(Thread):
 
 
     def backgroundFrameSub(self, np_buffer, threshold, minimum_area):
-        frame = np.reshape(np_buffer, (self.height, self.width))
-        frame = cv2.GaussianBlur(frame, (5,5), 0)
+        #frame = np.reshape(np_buffer, (self.height, self.width))
+        frame = cv2.GaussianBlur(np_buffer, (5,5), 0)
+        if self.backgroundFrame is None:
+            self.backgroundFrame = frame
+            
         frame = cv2.absdiff(frame, self.backgroundFrame)
 
         ret, frame = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
@@ -314,6 +346,13 @@ class CameraOutputStream(object):
         self.tempFrame = None
         self.staticEnv = None
         self.MIN_AREA = 20
+        #self.video = VideoOutput(videoFile, height=camera.resolution.height,
+        #                                    width=camera.resolution.width)
+        self.video0 = VideoOutput(videoFile, height=0, width=0, port=1130)
+        self.video1 = VideoOutput(videoFile, height=0, width=0, port=1131)
+        self.video2 = VideoOutput(videoFile, height=0, width=0, port=1132)
+        self.video3 = VideoOutput(videoFile, height=0, width=0, port=1133)
+        
         if logFileExtention is not None:
             self.logStream = io.open(videoFile + logFileExtention, 'w')
 
@@ -440,12 +479,7 @@ class CameraOutputStream(object):
             return False
                 
 
-    def write(self, buf):
-        if self.logStream is not None:
-            if self.camera.frame.complete and self.camera.frame.timestamp:
-                self.logStream.write('%f\n' %(self.camera.frame.timestamp /\
-                                              1000.0))  # Normalize the time then write it to the log stream
-        
+    def write(self, buf):        
         if self.fileType == 'yuv':
             fwidth = (self.camera.resolution.width+31) // 32 * 32
             fheight = (self.camera.resolution.height+15) // 16 * 16
@@ -457,8 +491,26 @@ class CameraOutputStream(object):
             self.cv_write((fwidth, fheight), y, 'jpg', modified=False)
             #self.videoStream.write(buf) Slower
         else:
-            self.videoStream.write(buf)
+            if self.totalCount % 4 == 0:
+                self.video0.write(buf)
+            elif self.totalCount % 4 == 1:
+                self.video1.write(buf)
+            elif self.totalCount % 4 == 2:
+                self.video2.write(buf)
+            else:
+                self.video3.write(buf)
             
+            #numpy_buf = np.frombuffer(buf, dtype=np.uint8)
+            #img = cv2.imdecode(numpy_buf, cv2.IMREAD_COLOR)
+            #cv2.imwrite('testing.jpg', img)
+            #self.videoStream.write(buf)
+
+
+        if self.logStream is not None:
+            if self.camera.frame.complete and self.camera.frame.timestamp:
+                self.logStream.write('%f\n' %(self.camera.frame.timestamp /\
+                                              1000.0))  # Normalize the time then write it to the log stream
+        
         self.totalCount += 1
     def flush(self):
         self.videoStream.flush()
