@@ -1,4 +1,4 @@
-#!/home/pi/.virtualenvs/cv/bin/python3 -OO
+#!/home/pi/.virtualenvs/cv/bin/python3
 # -*- coding: utf-8 -*-
 
 '''
