@@ -1,4 +1,4 @@
-#!/home/pi/.virtualenvs/cv/bin/python3
+#!/home/pi/.virtualenvs/cv2/bin/python3
 # -*- coding: utf-8 -*-
 
 '''
@@ -819,8 +819,7 @@ class PiCameraApp ( Frame ):
 				self.LogFileExtention = '.timestamp.log'
 
 			if self.VidFormat == 'h264':			    
-				self.cameraOutputStream = CameraOutputStream(self.camera, self.TempFile,
-									     self.LogFileExtention)
+				self.cameraOutputStream = CameraOutputStream(self.camera, self.TempFile)
 			
 				self.camera.start_recording(output=self.cameraOutputStream,
 					format=self.VidFormat,profile=H264.Profile,level=H264.Level,
@@ -828,14 +827,11 @@ class PiCameraApp ( Frame ):
 					inline_headers=H264.InlineHeaders,sei=H264.SEI,
 					sps_timing=H264.SPSTiming,motion_output=H264.MotionOutput)
 			elif self.VidFormat == 'yuv':
-				self.cameraOutputStream = CameraYUVStream(self.camera,
-									  self.TempFile,
-									  self.LogFileExtention)
+				self.cameraOutputStream = CameraYUVStream(self.camera, self.TempFile)
 				self.camera.start_recording(output=self.cameraOutputStream, format='yuv')
 				
 			else:	# generic - we can use anything
-				self.cameraOutputStream = CameraOutputStream(self.camera, self.TempFile,
-									     self.LogFileExtention)
+				self.cameraOutputStream = CameraOutputStream(self.camera, self.TempFile)
 				self.camera.start_recording(output=self.cameraOutputStream,
 							    format=self.VidFormat)
 			self.photoCanvas.itemconfigure('capture',state='normal')
@@ -843,6 +839,7 @@ class PiCameraApp ( Frame ):
 		else:
 			self.TakeVideo.config(text='Video')
 			self.camera.stop_recording()
+			self.cameraOutputStream.close()
 			self.photoCanvas.itemconfigure('capture',state='hidden')
 			if PreferencesDialog.VideoTimestamp is True:
 				filename = 'Video_' + \

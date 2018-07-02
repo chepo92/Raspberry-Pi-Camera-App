@@ -1,10 +1,10 @@
 import io
 import sys
 import cv2
-import skvideo.io
+#import skvideo.io
 import numpy as np
 import tkinter as tk
-import skvideo.utils
+#import skvideo.utils
 from time import sleep
 import subprocess as sp
 from PIL import Image, ImageTk
@@ -12,37 +12,54 @@ from threading import Thread, Event
 from imagesocket import ImageSocket
 from queue import Queue, Empty, PriorityQueue
 
-class tracker(object):
+class Tracker(object):
     def __init__(self, posX, posY):
         self.x = posX
         self.y = posY
         self.framesSinceLastMove = 0
         self.displayMsg = 'Awake'
+        self.eventTracker = EventTracker(1)
 
     def calcDist(self, posX, posY):
         return (self.x-posX)**2 + (self.y-posY)**2
 
-    def updatePos(self, dist, x, y):
-        if x is not None:
-            self.x = x
-        if y is not None:
-            self.y = y
-            
+    def updatePos(self, frame, bounding_box):
+        x = bounding_box[0] + (bounding_box[2] - bounding_box[0])/2
+        y = bounding_box[1] + (bounding_box[3] - bounding_box[1])/2
+        # if x is not None:
+        #     self.x = x
+        # if y is not None:
+        #     self.y = y
+
+        dist = self.calcDist(x, y)
+        frame = self.eventTracker.kcfTracking(frame)                    
         if dist is not None and dist > 20:
             self.framesSinceLastMove = 0
             self.displayMsg = 'Awake'
         else:
             self.framesSinceLastMove += 1
-            if self.framesSinceLastMove > 10*3: # 3 sec @10 fps
+            if self.framesSinceLastMove > 2*3: # 3 sec @2 fps
+                if self.eventTracker.tracking == False:
+                    print("Tracking")
+                    self.eventTracker.initKCFTracking(frame, bounding_box)
+                    self.eventTracker.tracking = True
                 self.displayMsg = 'Sleeping'
+
+        self.x = x
+        self.y = y
+
+        return frame
+                
 
 class EventTracker(object):
     def __init__(self, numberOfObj):
         self.numberOfObj = numberOfObj
-        #self.trackers = [tracker(0,0)] * numberOfObj
+        #self.trackers = [Tracker(0,0)] * numberOfObj
         self.trackers = []
-        for i in range(numberOfObj):
-            self.trackers.append(tracker(0, 0))
+        self.tracker = None
+        self.tracking = False
+        # for i in range(numberOfObj):
+        #     self.trackers.append(tracker(0, 0))
             
         self.queue = PriorityQueue()
         self.lastFrameNum = 0
@@ -102,6 +119,39 @@ class EventTracker(object):
             self.trackers[i].updatePos(None, None, None)
 
 
+    def initKCFTracking(self, frame, bounding_box):
+        self.tracker = cv2.TrackerMIL_create()
+        self.tracker.init(frame, bounding_box)
+            
+    def kcfTracking(self, frame):
+        # if bounding_box is not None:
+        #     self.box = bounding_box
+        #     self.tracker = cv2.TrackerKCF_create()
+        #     ret = self.tracker.init(frame, bounding_box)
+        #     if ret:
+        #         return frame
+        #     else:
+        #         return None
+        # else:
+        if self.tracker is None:
+            return None
+        
+        # if self.box is None:
+        #     return None
+        
+        ret, box = self.tracker.update(frame)
+        if ret:
+            p1 = (int(box[0]), int(box[1]))
+            p2 = (int(box[0] + box[2]), int(box[1] + box[3]))
+            cv2.rectangle(frame, p1, p2, (255,0,0), 2, 1)
+            self.tracking = True
+            return frame
+        else:
+            print("Lost")
+            self.tracking = False
+            return None
+        
+
 class VideoOutput(Thread):
     def __init__(self, filename, height, width, port):
         super(VideoOutput, self).__init__()
@@ -113,12 +163,16 @@ class VideoOutput(Thread):
         self.frameNum = 0
         self.filename = filename
         self.backgroundFrame = None
-        self.eventTracker = EventTracker(4)
+        self.eventTracker = EventTracker(1)
+        self.tracker = Tracker(0, 0)
         self.blobParams = None
         self.blobDetector = None
         self.mog = None
         self.gmg = None
         self.kernel = None
+        self.framerate = 2
+        self.resolution = (720, 480)
+        self.findObject = True
         self.command = ['ffmpeg',
                         '-y',
                         '-f', 'rawvideo',
@@ -130,10 +184,19 @@ class VideoOutput(Thread):
                         '-an',
                         '-vcodec', 'mpeg',
                         'video.mp4']
-        self.pipe = sp.Popen(self.command, stdin=sp.PIPE, stderr=sp.PIPE)
+        #self.pipe = sp.Popen(self.command, stdin=sp.PIPE, stderr=sp.PIPE)
         #self.pipe.communicate()
-        #self.fourcc = cv2.VideoWriter_fourcc('H', '2', '6', '4')
-        #self.videoWriter = cv2.VideoWriter('video.mp4', self.fourcc, 20, (480, 720))
+
+        # Works with color
+        #self.fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
+        #self.videoWriter = cv2.VideoWriter('video.avi', self.fourcc, 30, (720, 480))
+
+        self.fourcc = cv2.VideoWriter_fourcc('X', '2', '6', '4')
+        # 0x00000021 is just some codec that works (not sure what it is for sure)
+        # False is setting the color variable to false, to write in grayscale
+        self.videoWriter = cv2.VideoWriter('video.mp4', 0x00000021,self.framerate,
+                                           self.resolution, False)
+        
         #self.videoWriter = skvideo.io.LibAVWriter('video.mp4', inputdict={"-pix_fmt": "gray"})
         self.writeVideo = True
         #self.socket = ImageSocket()
@@ -159,10 +222,10 @@ class VideoOutput(Thread):
             except Empty:
                 pass
             else:
-                if self.backgroundFrame is not None:
-                    self.backgroundFrame = np.frombuffer(buf, dtype=np.uint8, count=self.width*self.height)
-                    self.backgroundFrame = np.reshape(self.backgroundFrame, (self.height, self.width))
-                    self.backgroundFrame = cv2.GaussianBlur(self.backgroundFrame, (5, 5), 0)
+                # if self.backgroundFrame is not None:
+                #     self.backgroundFrame = np.frombuffer(buf, dtype=np.uint8, count=self.width*self.height)
+                #     self.backgroundFrame = np.reshape(self.backgroundFrame, (self.height, self.width))
+                #     self.backgroundFrame = cv2.GaussianBlur(self.backgroundFrame, (5, 5), 0)
 
                 #self.splitFrame(buf, self.frameNum)
                 self.splitFrame(buf, num)
@@ -177,26 +240,28 @@ class VideoOutput(Thread):
 
 
     def cvWriteVideo(self, frame):
-        if frame.ndim == 1:
+        #if frame.ndim == 1:
             #print("Resahpe")
             #frame = np.reshape(frame, (self.height, self.width, 1))
-            #frame = np.reshape(frame, (480, 720, 1))
-            frame = skvideo.utils.vshape(frame)
-        #cv2.cvtColor(frame, frame, cv2.COLOR_GRAY2RGB)
+            #frame = np.reshape(frame, (720, 480))
+            #frame = skvideo.utils.vshape(frame)
+        #frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
         #print(frame.shape)            
         #self.videoWriter.writeFrame(frame)
-        #self.videoWriter.write(frame)
-        for x in range(10):
-            self.pipe.stdin.write(frame.tostring()[:-1].encode('utf-8'))
-            print("Written")
+        #cv2.imshow('Frame', frame)
+        #cv2.waitKey(0)
+        self.videoWriter.write(frame)
+        # for x in range(10):
+        #     self.pipe.stdin.write(frame.tostring()[:-1].encode('utf-8'))
+        #     print("Written")
         
     def splitFrame(self, buf, frameNum):
         #np_array = np.frombuffer(buf, dtype=np.uint8, count=self.width*self.height)
 
         #self.socket.sendNumpy(np.reshape(np_array, (self.height, self.width)))
-        length = self.width * self.height
-        if length == 0:
-            length = len(buf)
+        #length = self.width * self.height
+        #if length <= 0:
+        #    length = len(buf)
 
 
         # Sends 1/3rd of the frames to the slave pi, and keeps 2/3rds locally to process
@@ -209,23 +274,53 @@ class VideoOutput(Thread):
         # elif(frameNum % 16 == 12):
         #     self.socket3.send(buf, length)
         # else:
-        image = np.frombuffer(buf, dtype=np.uint8, count=length)
+        image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
         image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
+
+        #frame = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)        
+
         #image = cv2.GaussianBlur(image, (5,5), 0)
-        frame, _ = self.backgroundFrameSub(image, 16, 300)
+        #if self.frameNum % 15 == 0:
+        # if self.findObject:
+        #     frame, box = self.backgroundFrameSub(image, 16, 900)
+        #     #frame, box = self.mogSubtraction(image, 16, 300)
+        #     if box is not None:
+        #         temp = self.eventTracker.kcfTracking(image, box)
+        #         if temp is not None:
+        #             print("Tracking")
+        #             image = temp
+        #             self.findObject = False
+        #         else:
+        #             image = frame
+        # else:
+        #     temp = self.eventTracker.kcfTracking(image)
+        #     if temp is None:
+        #         self.findObject = True
+        #     else:
+        #         image = temp
+
+        frame, box = self.backgroundFrameSub(image, 30, 900)
+        if box is not None:
+            temp = self.tracker.updatePos(image, box)
+            if temp is not None:
+                image = temp
+
+        
+        #frame = image
         #cv2.imwrite('testing.{}.jpg'.format(frameNum), image)
         #cv2.imwrite('testing.frame{}.jpg'.format(frameNum), frame)
-        if self.writeVideo is True:
-            try:
-                self.cvWriteVideo(frame)
-            except Exception as e:
-                print(e)
-        else:
-            print("Done")
-        if self.frameNum >= 900:
-            self.writeVideo = False
-            self.videoWriter.release()
-            #self.videoWriter.close()
+        # if self.writeVideo is True:
+        #     try:
+        #         self.cvWriteVideo(image)
+        #     except Exception as e:
+        #         print(e)
+        # else:
+        #     print("Done")
+        # if self.frameNum >= 900:
+        #     self.writeVideo = False
+        #     self.videoWriter.release()
+        #     #self.videoWriter.close()
+        self.cvWriteVideo(image)
         self.frameNum += 1
         
         #print(self.ident)
@@ -241,45 +336,58 @@ class VideoOutput(Thread):
 
     def backgroundFrameSub(self, np_buffer, threshold, minimum_area):
         #frame = np.reshape(np_buffer, (self.height, self.width))
-        frame = cv2.GaussianBlur(np_buffer, (5,5), 0)
+        frame = cv2.GaussianBlur(np_buffer, (21,21), 0)
         if self.backgroundFrame is None:
+            print("Setting Background")
             self.backgroundFrame = frame
-            
+
         frame = cv2.absdiff(frame, self.backgroundFrame)
 
         ret, frame = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
         _, contours, hierarchy = cv2.findContours(frame, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
-        centers = []
+        #centers = []
+        box = None
         for contour in contours:
             if cv2.contourArea(contour) > minimum_area:
                 x, y, w, h = cv2.boundingRect(contour)
+                box = (x, y, x+w, y+h)
                 cv2.rectangle(frame, (x,y), (x+w, y+h), (255, 255, 255), 2)
+                break
+                #m = cv2.moments(contour)
+                #centers.append(((m['m10'] / m['m00']), (m['m01'] / m['m00'])))
 
-                m = cv2.moments(contour)
-                centers.append(((m['m10'] / m['m00']), (m['m01'] / m['m00'])))
-                
-        return (frame, centers)
+        return (frame, box)
+        #return (frame, centers)
 
 
     def mogSubtraction(self, np_buffer, threshold, minimum_area):
-        frame = np.reshape(np_buffer, (self.height, self.width))
+        #frame = np.reshape(np_buffer, (self.height, self.width))
         if self.mog is None:
             self.mog = cv2.createBackgroundSubtractorMOG2(varThreshold=threshold, detectShadows=False)
 
-        frame = self.mog.apply(frame)
+        frame = self.mog.apply(np_buffer)
         _, contours, hierarchy = cv2.findContours(frame, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
-        centers = []
+        # centers = []
+        # for contour in contours:
+        #     if cv2.contourArea(contour) > minimum_area:
+        #         x, y, w, h = cv2.boundingRect(contour)
+        #         cv2.rectangle(frame, (x,y), (x+w, y+h), (255, 255, 255), 2)
+
+        #         m = cv2.moments(contour)
+        #         centers.append(((m['m10'] / m['m00']), (m['m01'] / m['m00'])))
+
+        box = None
         for contour in contours:
             if cv2.contourArea(contour) > minimum_area:
                 x, y, w, h = cv2.boundingRect(contour)
+                box = (x, y, x+w, y+h)
                 cv2.rectangle(frame, (x,y), (x+w, y+h), (255, 255, 255), 2)
+                break
 
-                m = cv2.moments(contour)
-                centers.append(((m['m10'] / m['m00']), (m['m01'] / m['m00'])))
                 
-        return (frame, centers)
+        return (frame, box)
 
     def gmgSubtraction(self, np_buffer, threshold, minimum_area):
         frame = np.reshape(np_buffer, (self.height, self.width))
@@ -334,6 +442,9 @@ class VideoOutput(Thread):
         self.queue.join()
 
     def close(self):
+        print("Closing Stream")
+        self.flush()
+        self.videoWriter.release()
         self.event.set()
         self.join()
 
@@ -368,6 +479,7 @@ class CameraYUVStream(object):
 
 
     def close(self):
+        print("Closing Stream")
         if self.logStream is not None:
             self.logStream.close()
         self.video.close()
@@ -375,8 +487,10 @@ class CameraYUVStream(object):
 
         
 class CameraOutputStream(object):
-    def __init__(self, camera, videoFile, logFileExtention, writeMotion=True, root=None):
+    def __init__(self, camera, videoFile, logFileExtention='.timestamp.log'):
         self.camera = camera
+        self.height = camera.resolution.height
+        self.width  = camera.resolution.width        
         self.videoFile = videoFile
         self.logFileExtention = logFileExtention
         self.videoStream = io.open(videoFile, 'wb')
@@ -393,9 +507,9 @@ class CameraOutputStream(object):
         self.tempFrame = None
         self.staticEnv = None
         self.MIN_AREA = 20
-        #self.video = VideoOutput(videoFile, height=camera.resolution.height,
-        #                                    width=camera.resolution.width)
-        self.video0 = VideoOutput(videoFile, height=0, width=0, port=1130)
+        #self.video = VideoOutput(videoFile, height=self.height,
+        #                                    width=self.width)
+        self.video0 = VideoOutput(videoFile, height=self.height, width=self.width, port=1130)
         # self.video1 = VideoOutput(videoFile, height=0, width=0, port=1131)
         # self.video2 = VideoOutput(videoFile, height=0, width=0, port=1132)
         # self.video3 = VideoOutput(videoFile, height=0, width=0, port=1133)
@@ -512,13 +626,13 @@ class CameraOutputStream(object):
     def getMotion(self, buf):
         if self.fileType == 'bgr':
             array = np.frombuffer(buf, dtype=np.uint8)
-            image = np.reshape(array, (self.camera.resolution.height, self.camera.resolution.width, 3))
+            image = np.reshape(array, (self.height, self.width, 3))
             grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             returnBuf = None
             if self.lastGreyFrame is not None:
                 self.movement = cv2.absdiff(self.lastGreyFrame, grey)
                 ret, self.movement = cv2.threshold(self.movement, self.THRESHOLD, 255, cv2.THRESH_BINARY)
-                #returnBuf = np.reshape(self.movement, (self.camera.resolution.height * self.camera.resolution.width)).tobytes()
+                #returnBuf = np.reshape(self.movement, (self.height * self.width)).tobytes()
                 self.lastGreyFrame = grey
                 return True
 
@@ -528,8 +642,8 @@ class CameraOutputStream(object):
 
     def write(self, buf):        
         if self.fileType == 'yuv':
-            fwidth = (self.camera.resolution.width+31) // 32 * 32
-            fheight = (self.camera.resolution.height+15) // 16 * 16
+            fwidth = (self.width+31) // 32 * 32
+            fheight = (self.height+15) // 16 * 16
             y = np.frombuffer(buf, dtype=np.uint8, count=fwidth*fheight)
             if self.totalCount % 2 != 10:
                 #y = self.get_movement(y, (fwidth, fheight))
@@ -567,7 +681,7 @@ class CameraOutputStream(object):
 
 
     def close(self):
-        self.videoStream.close()
+        self.video0.close()
         if self.logStream is not None:
             self.logStream.close()
-        self.sleep(1)
+
