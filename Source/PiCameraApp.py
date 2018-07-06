@@ -105,7 +105,7 @@ from	FinerControl import *
 from	Exposure import *
 from	Timelapse import *
 from	Utils import *
-from    CameraOutputStream import *
+from    camera_processing import VideoHandler
 
 #
 # Main PiCameraApp Window
@@ -819,27 +819,27 @@ class PiCameraApp ( Frame ):
 				self.LogFileExtention = '.timestamp.log'
 
 			if self.VidFormat == 'h264':			    
-				self.cameraOutputStream = CameraOutputStream(self.camera, self.TempFile)
+				self.video_handler = VideoHandler(self.camera, self.TempFile)
 			
-				self.camera.start_recording(output=self.cameraOutputStream,
+				self.camera.start_recording(output=self.video_handler,
 					format=self.VidFormat,profile=H264.Profile,level=H264.Level,
 					intra_period=H264.IntraPeriod,intra_refresh=H264.IntraRefresh,
 					inline_headers=H264.InlineHeaders,sei=H264.SEI,
 					sps_timing=H264.SPSTiming,motion_output=H264.MotionOutput)
 			elif self.VidFormat == 'yuv':
-				self.cameraOutputStream = CameraYUVStream(self.camera, self.TempFile)
-				self.camera.start_recording(output=self.cameraOutputStream, format='yuv')
+				self.video_handler = CameraYUVStream(self.camera, self.TempFile)
+				self.camera.start_recording(output=self.video_handler, format='yuv')
 				
 			else:	# generic - we can use anything
-				self.cameraOutputStream = CameraOutputStream(self.camera, self.TempFile)
-				self.camera.start_recording(output=self.cameraOutputStream,
+				self.video_handler = VideoHandler(self.camera, self.TempFile)
+				self.camera.start_recording(output=self.video_handler,
 							    format=self.VidFormat)
 			self.photoCanvas.itemconfigure('capture',state='normal')
 			self.after(50,self.UpdateCaptureInProgress)
 		else:
 			self.TakeVideo.config(text='Video')
 			self.camera.stop_recording()
-			self.cameraOutputStream.close()
+			self.video_handler.close()
 			self.photoCanvas.itemconfigure('capture',state='hidden')
 			if PreferencesDialog.VideoTimestamp is True:
 				filename = 'Video_' + \
