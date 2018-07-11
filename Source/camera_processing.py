@@ -1,11 +1,10 @@
 """Defines the classes that are used for the post-processing of images generated
    from the picamera
 
-   Author: Zachary Selk (zrselk@gmail.com)
+   Author: Zachary Selk <zrselk@gmail.com>
    Github: www.github.com/zacharyselk
    Date  : June 2018
 
-  Documented using Sphinx
   Style-Guide: https://www.github.com/google/styleguide/blob/gh-pages/pyguide.md
 """
 
@@ -126,6 +125,7 @@ class Tracker(object):
         """
         self.tracker = None    # Used to track an object
         self.tracking = False  # If we are currently tracking something
+        self.num_of_objects = 0
         self.event_tracker = EventTracker()
         self.consecutive_frames_recived = 0
 

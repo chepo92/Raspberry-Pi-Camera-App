@@ -35,6 +35,16 @@
             
   <div class="section" id="module-camera_processing">
 <span id="camera-processing"></span><h1>Camera Processing<a class="headerlink" href="#module-camera_processing" title="Permalink to this headline">¶</a></h1>
+<dl class="docutils">
+<dt>Defines the classes that are used for the post-processing of images generated</dt>
+<dd><p class="first">from the picamera</p>
+<p class="last">Author: Zachary Selk (<a class="reference external" href="mailto:zrselk&#37;&#52;&#48;gmail&#46;com">zrselk<span>&#64;</span>gmail<span>&#46;</span>com</a>)
+Github: www.github.com/zacharyselk
+Date  : June 2018</p>
+</dd>
+</dl>
+<p>Documented using Sphinx
+Style-Guide: <a class="reference external" href="https://www.github.com/google/styleguide/blob/gh-pages/pyguide.md">https://www.github.com/google/styleguide/blob/gh-pages/pyguide.md</a></p>
 <dl class="class">
 <dt id="camera_processing.EventTracker">
 <em class="property">class </em><code class="descclassname">camera_processing.</code><code class="descname">EventTracker</code><span class="sig-paren">(</span><em>x_pos=0</em>, <em>y_pos=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#EventTracker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.EventTracker" title="Permalink to this definition">¶</a></dt>
@@ -87,14 +97,13 @@ threshold (float, optional): The distance that is considered
 
 <dl class="method">
 <dt id="camera_processing.EventTracker.update">
-<code class="descname">update</code><span class="sig-paren">(</span><em>frame</em>, <em>bounding_box</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#EventTracker.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.EventTracker.update" title="Permalink to this definition">¶</a></dt>
+<code class="descname">update</code><span class="sig-paren">(</span><em>bounding_box</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#EventTracker.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.EventTracker.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates the tracking.</p>
-<p>Takes the next frame along with a bounding box of the object, and 
+<p>Takes the next frame along with a bounding box of the object, and
 updates the event.</p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd>frame: An opencv image of the next frame
-bounding_box: A tuple that describes the box ie.
+<dd>bounding_box: A tuple that describes the box ie.
 (top_left_x_pos, top_left_y_pos, top_right_x_pos, bottom_left_y_pos).</dd>
 <dt>Returns:</dt>
 <dd>None.</dd>
@@ -122,14 +131,14 @@ bounding_box: A tuple that describes the box ie.
 <p>Tracks a ROI, using the KCF (Kernelized Correlation Filters) tracking
 algorithm, until tracking is lost.</p>
 <dl class="method">
-<dt id="camera_processing.Tracker.initKCFTracking">
-<code class="descname">initKCFTracking</code><span class="sig-paren">(</span><em>frame</em>, <em>bounding_box</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#Tracker.initKCFTracking"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.Tracker.initKCFTracking" title="Permalink to this definition">¶</a></dt>
+<dt id="camera_processing.Tracker.init_kcf_tracking">
+<code class="descname">init_kcf_tracking</code><span class="sig-paren">(</span><em>frame</em>, <em>bounding_box</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#Tracker.init_kcf_tracking"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.Tracker.init_kcf_tracking" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a default KCF tracking object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="camera_processing.Tracker.kcfTracking">
-<code class="descname">kcfTracking</code><span class="sig-paren">(</span><em>frame</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#Tracker.kcfTracking"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.Tracker.kcfTracking" title="Permalink to this definition">¶</a></dt>
+<dt id="camera_processing.Tracker.kcf_tracking">
+<code class="descname">kcf_tracking</code><span class="sig-paren">(</span><em>frame</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#Tracker.kcf_tracking"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.Tracker.kcf_tracking" title="Permalink to this definition">¶</a></dt>
 <dd><p>Progresses the object tracking.</p>
 <p>Takes a frame and attempts to track the original object using KCF
 tracking.</p>
@@ -153,6 +162,514 @@ bounding_box: The ROI to track, only needed if this is the first
 time calling <cite>track</cite>. Defaults to None.</dd>
 <dt>TODO:</dt>
 <dd>This really needs to be intergrated better.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="camera_processing.VideoHandler">
+<em class="property">class </em><code class="descclassname">camera_processing.</code><code class="descname">VideoHandler</code><span class="sig-paren">(</span><em>camera</em>, <em>video_file</em>, <em>log_file_extension='.timestamp.log'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles aquired frames from a video stream.</p>
+<p>This object acts as an interface for the picamera so that frames can be
+processed before being writen.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>camera: An instance of the camera object from the picam library.
+video_file: The file name/path for writing video to.
+log_file_extension: The name to appened to the timestamp file.</dd>
+</dl>
+<dl class="method">
+<dt id="camera_processing.VideoHandler.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoHandler.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoHandler.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the writing streams and the processing objects.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="camera_processing.VideoHandler.flush">
+<code class="descname">flush</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoHandler.flush"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoHandler.flush" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flushes the writing streams.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="camera_processing.VideoHandler.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoHandler.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoHandler.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the timestamps and handles the aquired buffer.</p>
+<p>This function is used as an interface for the picamera, allowing us to
+capture the frames from the camera for processing.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>buf: A buffer of a newly aquired image.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="camera_processing.VideoProcessing">
+<em class="property">class </em><code class="descclassname">camera_processing.</code><code class="descname">VideoProcessing</code><span class="sig-paren">(</span><em>filename</em>, <em>height</em>, <em>width</em>, <em>framerate</em>, <em>file_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoProcessing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles video processing</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename: The file name/path that the video or images will be written
+as. Note: if writing images. each one will have the frame number
+added to the name.
+height: The height of the video in pixels.
+width: The width of the video in pixels.
+framerate: The framerate of the video in frames per second.
+file_type: What type of encoding is used on the buffers that will be
+passed for decoding</dd>
+</dl>
+<dl class="method">
+<dt id="camera_processing.VideoProcessing.background_frame_subtraction">
+<code class="descname">background_frame_subtraction</code><span class="sig-paren">(</span><em>np_buffer</em>, <em>threshold</em>, <em>minimum_area</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.background_frame_subtraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoProcessing.background_frame_subtraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object detection using frame subtraction.</p>
+<p>Subtracts the first frame acquired from any proceding frame to detect
+any changes in the scene.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>np_buffer: A numpy buffer of the image.
+threshold: The amount of change in pixel luminescence unitl a
+difference is detected.
+minimum_area: The minimum amount of area that is required for an
+object to be detected.</dd>
+<dt>Returns:</dt>
+<dd>(frame, box): A tuple containing both the thresholded frame and
+a bounding box of the detected object. If no object is detected,
+then box is None.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="camera_processing.VideoProcessing.blob_detection">
+<code class="descname">blob_detection</code><span class="sig-paren">(</span><em>np_buffer</em>, <em>minimum_area</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.blob_detection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoProcessing.blob_detection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object detection by finding ‘blobs’ in the scene</p>
+<p>Uses the opencv implementation of blob detection to find convex ‘blobs’
+in the scene.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>np_buffer: A numpy buffer of the image.
+minimum_area: The minimum amount of area that is required for an
+object to be detected.</dd>
+<dt>Returns:</dt>
+<dd>(frame, centers): A tuple containing both the thresholded frame as
+well as a list of tuples describing the center of each objected
+detected.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="camera_processing.VideoProcessing.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoProcessing.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the video stream and the worker queue</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="camera_processing.VideoProcessing.cv_write_image">
+<code class="descname">cv_write_image</code><span class="sig-paren">(</span><em>frame</em>, <em>file_type='.jpeg'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.cv_write_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoProcessing.cv_write_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the frames of the video as images using opencv.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>frame: The frame to be written.
+file_type: What encoding to use on the image. Defaults to jpeg.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="camera_processing.VideoProcessing.cv_write_video">
+<code class="descname">cv_write_video</code><span class="sig-paren">(</span><em>frame</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.cv_write_video"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoProcessing.cv_write_video" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the frames of the video as a mp4 video using opencv.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>frame: The frame to be written.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="camera_processing.VideoProcessing.flush">
+<code class="descname">flush</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.flush"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoProcessing.flush" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flushes the worker queue</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="camera_processing.VideoProcessing.gmg_subtraction">
+<code class="descname">gmg_subtraction</code><span class="sig-paren">(</span><em>np_buffer</em>, <em>minimum_area</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.gmg_subtraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoProcessing.gmg_subtraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object detection using GMG subtraction.</p>
+<p>Uses the opecnv implementation of GMG subtraction developed by
+Andrew Godbehere, Akihiro Matsukawa, and Ken Goldberg (GMG).</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>np_buffer: A numpy buffer of the image.
+minimum_area: The minimum amount of area that is required for an
+object to be detected.</dd>
+<dt>Returns:</dt>
+<dd>(frame, centers): A tuple containing both the thresholded frame as
+well as a list of tuples describing the center of each objected
+detected.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="camera_processing.VideoProcessing.mog_subtraction">
+<code class="descname">mog_subtraction</code><span class="sig-paren">(</span><em>np_buffer</em>, <em>threshold</em>, <em>minimum_area</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.mog_subtraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoProcessing.mog_subtraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object detection using MOG subtraction.</p>
+<p>Uses the opencv implementation of MOG subtraction developed by
+Pakorn KaewTraKulPong and Richard Bowden.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>np_buffer: A numpy buffer of the image.
+threshold: The amount of change in pixel luminescence unitl a
+difference is detected.
+minimum_area: The minimum amount of area that is required for an
+object to be detected.</dd>
+<dt>Returns:</dt>
+<dd>(frame, box): A tuple containing both the thresholded frame and
+a bounding box of the detected object. If no object is detected,
+then box is None.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="camera_processing.VideoProcessing.process_frame">
+<code class="descname">process_frame</code><span class="sig-paren">(</span><em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.process_frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoProcessing.process_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decodes the buffer then manages the tracking.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>buf: A buffer representing the image.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="camera_processing.VideoProcessing.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoProcessing.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the processes that have been queued up.</p>
+<p>This function is called by the <cite>threading</cite> class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="camera_processing.VideoProcessing.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#camera_processing.VideoProcessing.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles then writes a frame buffer.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>buf: The buffer (binary form) of a frame.</dd>
+<dt>Returns:</dt>
+<dd>Returns the length of the recieved buffer.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">camera_processing.</code><code class="descname">Tracker</code><a class="reference internal" href="_modules/camera_processing.html#Tracker"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Tracks an object when given a ROI (Region Of Interest).</p>
+<p>Tracks a ROI, using the KCF (Kernelized Correlation Filters) tracking
+algorithm, until tracking is lost.</p>
+<dl class="method">
+<dt>
+<code class="descname">init_kcf_tracking</code><span class="sig-paren">(</span><em>frame</em>, <em>bounding_box</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#Tracker.init_kcf_tracking"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Creates a default KCF tracking object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">kcf_tracking</code><span class="sig-paren">(</span><em>frame</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#Tracker.kcf_tracking"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Progresses the object tracking.</p>
+<p>Takes a frame and attempts to track the original object using KCF
+tracking.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>frame: The opencv image to be tracked.</dd>
+<dt>Returns:</dt>
+<dd>If tracking was successful returns the frame with a box draw on it,
+otherwise return the frame as is.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">track</code><span class="sig-paren">(</span><em>frame</em>, <em>bounding_box=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#Tracker.track"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Decides if tracking should be done.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>frame: The opencv image to be tracked.
+bounding_box: The ROI to track, only needed if this is the first
+time calling <cite>track</cite>. Defaults to None.</dd>
+<dt>TODO:</dt>
+<dd>This really needs to be intergrated better.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">camera_processing.</code><code class="descname">EventTracker</code><span class="sig-paren">(</span><em>x_pos=0</em>, <em>y_pos=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#EventTracker"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Event tracking object.</p>
+<p>A class to classify and maintain the events detected from the frames passed
+to it.</p>
+<dl class="docutils">
+<dt>Attributes:</dt>
+<dd>x_pos (float) : The x position of the current frame.
+y_pos (float) : The y position of the current frame.
+event (str)   : The current event that has been classified.</dd>
+</dl>
+<dl class="method">
+<dt>
+<code class="descname">calc_dist2</code><span class="sig-paren">(</span><em>x_pos</em>, <em>y_pos</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#EventTracker.calc_dist2"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Calculate the squared euclidean distance.</p>
+<p>Calculates the squared euclidean distance between the current position
+and the new position passed.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>x_pos (float): x position of the point to be measured.
+y_pos (float): y position of the point to be measured.</dd>
+<dt>Returns:</dt>
+<dd>The squared distance between the two points.</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">event</code><em class="property"> = None</em></dt>
+<dd><p>A string of the current event</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">significant_movement</code><span class="sig-paren">(</span><em>x_pos</em>, <em>y_pos</em>, <em>threshold=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#EventTracker.significant_movement"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Determines if movement is ‘significant’.</p>
+<p>Measures to see if the distance between the current position and
+(x_pos, y_pos) is greater than <cite>threshold</cite>.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>x_pos (float): x position of the point to be measured.
+y_pos (float): y position of the point to be measured.
+threshold (float, optional): The distance that is considered
+‘significant’. Defaults to 10.</dd>
+<dt>Returns:</dt>
+<dd>Bool: True if distance is greater than <cite>threshold</cite>, False otherwise.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">update</code><span class="sig-paren">(</span><em>bounding_box</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#EventTracker.update"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Updates the tracking.</p>
+<p>Takes the next frame along with a bounding box of the object, and
+updates the event.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>bounding_box: A tuple that describes the box ie.
+(top_left_x_pos, top_left_y_pos, top_right_x_pos, bottom_left_y_pos).</dd>
+<dt>Returns:</dt>
+<dd>None.</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">x_pos</code><em class="property"> = None</em></dt>
+<dd><p>The center x position of the tracked object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">y_pos</code><em class="property"> = None</em></dt>
+<dd><p>The center y position of the tracked object</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">camera_processing.</code><code class="descname">VideoProcessing</code><span class="sig-paren">(</span><em>filename</em>, <em>height</em>, <em>width</em>, <em>framerate</em>, <em>file_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Handles video processing</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>filename: The file name/path that the video or images will be written
+as. Note: if writing images. each one will have the frame number
+added to the name.
+height: The height of the video in pixels.
+width: The width of the video in pixels.
+framerate: The framerate of the video in frames per second.
+file_type: What type of encoding is used on the buffers that will be
+passed for decoding</dd>
+</dl>
+<dl class="method">
+<dt>
+<code class="descname">background_frame_subtraction</code><span class="sig-paren">(</span><em>np_buffer</em>, <em>threshold</em>, <em>minimum_area</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.background_frame_subtraction"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Object detection using frame subtraction.</p>
+<p>Subtracts the first frame acquired from any proceding frame to detect
+any changes in the scene.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>np_buffer: A numpy buffer of the image.
+threshold: The amount of change in pixel luminescence unitl a
+difference is detected.
+minimum_area: The minimum amount of area that is required for an
+object to be detected.</dd>
+<dt>Returns:</dt>
+<dd>(frame, box): A tuple containing both the thresholded frame and
+a bounding box of the detected object. If no object is detected,
+then box is None.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">blob_detection</code><span class="sig-paren">(</span><em>np_buffer</em>, <em>minimum_area</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.blob_detection"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Object detection by finding ‘blobs’ in the scene</p>
+<p>Uses the opencv implementation of blob detection to find convex ‘blobs’
+in the scene.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>np_buffer: A numpy buffer of the image.
+minimum_area: The minimum amount of area that is required for an
+object to be detected.</dd>
+<dt>Returns:</dt>
+<dd>(frame, centers): A tuple containing both the thresholded frame as
+well as a list of tuples describing the center of each objected
+detected.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.close"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Closes the video stream and the worker queue</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">cv_write_image</code><span class="sig-paren">(</span><em>frame</em>, <em>file_type='.jpeg'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.cv_write_image"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Writes the frames of the video as images using opencv.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>frame: The frame to be written.
+file_type: What encoding to use on the image. Defaults to jpeg.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">cv_write_video</code><span class="sig-paren">(</span><em>frame</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.cv_write_video"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Writes the frames of the video as a mp4 video using opencv.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>frame: The frame to be written.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">flush</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.flush"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Flushes the worker queue</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">gmg_subtraction</code><span class="sig-paren">(</span><em>np_buffer</em>, <em>minimum_area</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.gmg_subtraction"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Object detection using GMG subtraction.</p>
+<p>Uses the opecnv implementation of GMG subtraction developed by
+Andrew Godbehere, Akihiro Matsukawa, and Ken Goldberg (GMG).</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>np_buffer: A numpy buffer of the image.
+minimum_area: The minimum amount of area that is required for an
+object to be detected.</dd>
+<dt>Returns:</dt>
+<dd>(frame, centers): A tuple containing both the thresholded frame as
+well as a list of tuples describing the center of each objected
+detected.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">mog_subtraction</code><span class="sig-paren">(</span><em>np_buffer</em>, <em>threshold</em>, <em>minimum_area</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.mog_subtraction"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Object detection using MOG subtraction.</p>
+<p>Uses the opencv implementation of MOG subtraction developed by
+Pakorn KaewTraKulPong and Richard Bowden.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>np_buffer: A numpy buffer of the image.
+threshold: The amount of change in pixel luminescence unitl a
+difference is detected.
+minimum_area: The minimum amount of area that is required for an
+object to be detected.</dd>
+<dt>Returns:</dt>
+<dd>(frame, box): A tuple containing both the thresholded frame and
+a bounding box of the detected object. If no object is detected,
+then box is None.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">process_frame</code><span class="sig-paren">(</span><em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.process_frame"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Decodes the buffer then manages the tracking.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>buf: A buffer representing the image.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.run"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Runs the processes that have been queued up.</p>
+<p>This function is called by the <cite>threading</cite> class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">write</code><span class="sig-paren">(</span><em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoProcessing.write"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Handles then writes a frame buffer.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>buf: The buffer (binary form) of a frame.</dd>
+<dt>Returns:</dt>
+<dd>Returns the length of the recieved buffer.</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">camera_processing.</code><code class="descname">VideoHandler</code><span class="sig-paren">(</span><em>camera</em>, <em>video_file</em>, <em>log_file_extension='.timestamp.log'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoHandler"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Handles aquired frames from a video stream.</p>
+<p>This object acts as an interface for the picamera so that frames can be
+processed before being writen.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>camera: An instance of the camera object from the picam library.
+video_file: The file name/path for writing video to.
+log_file_extension: The name to appened to the timestamp file.</dd>
+</dl>
+<dl class="method">
+<dt>
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoHandler.close"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Closes the writing streams and the processing objects.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">flush</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoHandler.flush"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Flushes the writing streams.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">write</code><span class="sig-paren">(</span><em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/camera_processing.html#VideoHandler.write"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Writes the timestamps and handles the aquired buffer.</p>
+<p>This function is used as an interface for the picamera, allowing us to
+capture the frames from the camera for processing.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>buf: A buffer of a newly aquired image.</dd>
 </dl>
 </dd></dl>
 

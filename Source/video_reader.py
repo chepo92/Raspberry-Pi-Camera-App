@@ -5,7 +5,8 @@ import time
 import argparse
 import numpy as np
 from threading import Thread
-from CameraOutputStream import CameraOutputStream
+#from CameraOutputStream import CameraOutputStream
+from camera_processing import VideoHandler
 
 
 class Resolution():
@@ -30,7 +31,8 @@ class PassFrame():
         self.camera.resolution.height = resolution[0]
         self.camera.resolution.width  = resolution[1]
         
-        self.tracking = CameraOutputStream(camera=self.camera, videoFile=output)
+        #self.tracking = CameraOutputStream(camera=self.camera, videoFile=output)
+        self.tracking = VideoHandler(camera=self.camera, video_file=output)
 
 
     def sendFrame(self, buf):
@@ -51,6 +53,7 @@ class PassFrame():
 
 
         self.reader.release()
+        self.tracking.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
