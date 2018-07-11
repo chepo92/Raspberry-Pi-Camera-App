@@ -148,7 +148,7 @@ class Tracker(object):
             This really needs to be intergrated better.
         """
         if self.tracking:
-            self.kcf_tracking(frame)
+            frame = self.kcf_tracking(frame)
             self.consecutive_frames_recived = 0
         # If not tracking check to see if tracking can be reinitalized,
         # the object in question must be relitivly still for a couple of
@@ -165,6 +165,8 @@ class Tracker(object):
                     self.init_kcf_tracking(frame, bounding_box)
             self.event_tracker.x_pos = center_x
             self.event_tracker.y_pos = center_y
+
+        return frame
 
     # Uses the KCF tracking from opencv to track an object
     def kcf_tracking(self, frame):
@@ -312,6 +314,7 @@ class VideoProcessing(Thread):
         if box is not None:
             image = self._tracker.track(image, box)
 
+        cv2.imshow('Image', image)
         self.cv_write_video(image)
         self._frame_number += 1
 
