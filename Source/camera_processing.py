@@ -234,6 +234,7 @@ class VideoProcessing(Thread):
         self.width = width
         self.resolution = (width, height)
         self.background_frame = None
+        self.last_frame = None
 
         # Object detection algorithm perameters
         self.blob_params = None
@@ -308,14 +309,17 @@ class VideoProcessing(Thread):
         """
         image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
         image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
-        _, box = self.background_frame_subtraction(image, 30, 900)
+        #frame, box = self.sequential_frame_subtraction(image, 30, 900)
+        frame, box = self.background_frame_subtraction(image, 30, 900)
+        #frame, box = self.mog_subtraction(image, 30, 900)
+        #frame, box = self.blob_detection(image, 900)
 
         # If we detected something then hand it to the tracker
-        if box is not None:
-            image = self._tracker.track(image, box)
+        #if box is not None:
+        #    image = self._tracker.track(image, box)
 
-        cv2.imshow('Image', image)
-        self.cv_write_video(image)
+        cv2.imshow('Image', frame)
+        #self.cv_write_video(image)
         self._frame_number += 1
 
     def background_frame_subtraction(self, np_buffer, threshold, minimum_area):
@@ -363,6 +367,40 @@ class VideoProcessing(Thread):
                 break
 
         return (frame, box)
+
+    def sequential_frame_subtraction(self, np_buffer, threshold, minimum_area):
+        frame = cv2.GaussianBlur(np_buffer, (5, 5), 0)
+
+        if self.last_frame is None:
+            self.last_frame = frame
+
+        
+        tmp = cv2.absdiff(frame, self.last_frame)
+        self.last_frame = frame
+        frame = tmp
+        #cv2.imshow('diff', frame)
+        
+        _, frame = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
+        _, contours, _ = cv2.findContours(frame, cv2.RETR_LIST,
+                                          cv2.CHAIN_APPROX_SIMPLE)
+        
+        # We only look at the first item in the list
+        #
+        #                        ^
+        # TODO: Make this better |
+        box = None
+        for contour in contours:
+            if cv2.contourArea(contour) > minimum_area:
+                x_pos, y_pos, width, height = cv2.boundingRect(contour)
+                box = (x_pos, y_pos, x_pos+width, y_pos+height)
+
+                # Draws a rectangle onto the image
+                cv2.rectangle(frame, (x_pos, y_pos),
+                              (x_pos+width, y_pos+height), (255, 255, 255), 2)
+                break
+
+        return (frame, box)
+
 
     # Have not really used this
     def mog_subtraction(self, np_buffer, threshold, minimum_area):
@@ -465,28 +503,43 @@ class VideoProcessing(Thread):
         frame = np.reshape(np_buffer, (self.height, self.width))
         if self.blob_params is None:
             self.blob_params = cv2.SimpleBlobDetector_Params()
-            self.blob_params.minThreshold = 10
-            self.blob_params.maxThreshold = 200
+            self.blob_params.minThreshold = 5
+            self.blob_params.maxThreshold = 255
             self.blob_params.filterByArea = True
-            self.blob_params.minArea = minimum_area
+            self.blob_params.minArea = 30
             self.blob_params.filterByCircularity = True
-            self.blob_params.minCircularity = 0.5
+            self.blob_params.minCircularity = 0.1
             self.blob_params.filterByConvexity = True
-            self.blob_params.minConvexity = 0.5
+            self.blob_params.minConvexity = 0.1
             self.blob_params.filterByInertia = True
             self.blob_params.minInertiaRatio = 0.01
         if self.blob_detector is None:
             self.blob_detector = cv2.SimpleBlobDetector_create(self.blob_params)
 
-        centers = []
+        # centers = []
+        # blobs = self.blob_detector.detect(frame)
+        # for blob in blobs:
+        #     centers.append(blob.pt)
+
+        # frame = cv2.drawKeypoints(frame, blobs, np.array([]), (0, 0, 255))
+
+        # return (frame, centers)
+
+        box = None
         blobs = self.blob_detector.detect(frame)
         for blob in blobs:
-            centers.append(blob.pt)
+            print("Blob")
+            x_pos, y_pos, width, height = cv2.boundingRect(blob)
+            box = (x_pos, y_pos, x_pos+width, y_pos+height)
+            
+            # Draws a rectangle onto the image
+            cv2.rectangle(frame, (x_pos, y_pos),
+                         (x_pos+width, y_pos+height), (255, 255, 255), 2)
+            break
 
-        frame = cv2.drawKeypoints(frame, blobs, np.array([]), (0, 0, 255))
+        return (frame, box)        
 
-        return (frame, centers)
-
+        
     def flush(self):
         """Flushes the worker queue"""
         self._queue.join()

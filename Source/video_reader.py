@@ -40,23 +40,23 @@ class PassFrame():
         self.tracking.write(buf)
         
     def readFrames(self):
-        while self.reader.isOpened():
-            ret, frame = self.reader.read()
-            if not ret:
-                break
+        try:
+            while self.reader.isOpened():
+                ret, frame = self.reader.read()
+                if not ret:
+                    break
 
-            #print(frame.shape)
-            #buf = np.reshape(frame, -1, 'A').astype(np.uint8).tobytes()
-            cv2.imshow('Read', frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-            ret, buf = cv2.imencode('.png', frame)
-            Thread(target=self.sendFrame, kwargs={'buf': buf}).start()
-            time.sleep(1/self.camera.framerate)
-
-
-        self.reader.release()
-        self.tracking.close()
+                #print(frame.shape)
+                #buf = np.reshape(frame, -1, 'A').astype(np.uint8).tobytes()
+                cv2.imshow('Read', frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+                ret, buf = cv2.imencode('.png', frame)
+                Thread(target=self.sendFrame, kwargs={'buf': buf}).start()
+                time.sleep(1/self.camera.framerate)
+        finally:                
+            self.reader.release()
+            self.tracking.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -74,5 +74,8 @@ if __name__ == '__main__':
     resolution= (int(args['height']), int(args['width']))
 
     setup = PassFrame(filename, framerate, resolution, fileout)
-    setup.readFrames()
+    try:
+        setup.readFrames()
+    except:
+        pass
     print("Done")
