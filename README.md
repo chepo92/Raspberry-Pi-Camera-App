@@ -22,7 +22,13 @@ Note: I am an old (old, old, old, ..., so very old) Windows programmer going bac
 
 ## Installation
 
-Download the zip file and extract to a directory of your choosing. To run, open a terminal, change to the directory containing the source files, and enter **sudo python PiCameraApp.py** or **sudo python3 PiCameraApp.py**.
+Download the zip file and extract to a directory of your choosing. 
+You may have to install ImageTk
+sudo apt-get install python-imaging
+sudo apt-get install python-imaging-tk
+
+## Usage
+To run, open a terminal, change to the directory containing the source files, and enter **sudo python PiCameraApp.py** or **sudo python3 PiCameraApp.py**.
 
 ## Known Issues
 
