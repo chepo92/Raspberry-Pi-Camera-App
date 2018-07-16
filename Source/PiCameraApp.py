@@ -1,4 +1,4 @@
-#!/home/pi/.virtualenvs/cv2/bin/python3
+#!/home/pi/.virtualenvs/cv/bin/python3
 # -*- coding: utf-8 -*-
 
 '''
@@ -1153,7 +1153,8 @@ def Run ():
 		input()
 		return
 
-	win.minsize(1024,768)
+	#win.minsize(1024,768)
+	win.minsize(10,10)
 	app = PiCameraApp(win,camera,title="PiCamera")
 	win.mainloop()
 
