@@ -68,7 +68,8 @@ class PreferencesDialog ( Dialog ):
 	#DefaultVideoDir = "/run/user/1000/gvfs/afp-volume:host=mohajerani-nas.local,volume=storage/homes/zachary.selk/testFolder"
 	DefaultFilesDir = "/home/pi/Documents"
 	DefaultPhotoFormat = 'jpeg'
-	DefaultVideoFormat = 'h264'
+	#DefaultVideoFormat = 'h264'
+	DefaultVideoFormat = 'mjpeg'
 	DefaultTimestampFormat = "%m-%d-%Y-%H:%M:%S"
 	PhotoTimestamp = False
 	VideoTimestamp = False
@@ -79,7 +80,8 @@ class PreferencesDialog ( Dialog ):
 		DefaultVideoDir = "/home/pi/Videos"
 		DefaultFilesDir = "/home/pi/Documents"
 		DefaultPhotoFormat = 'jpeg'
-		DefaultVideoFormat = 'h264'
+		#DefaultVideoFormat = 'h264'
+		DefaultVideoFormat = 'mjpeg'
 		DefaultTimestampFormat = "%m-%d-%Y-%H:%M:%S"
 		PhotoTimestamp = False
 		VideoTimestamp = False
