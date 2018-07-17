@@ -226,7 +226,8 @@ class VideoProcessing(Thread):
         self._tracker = Tracker()
         self._queue = Queue(maxsize=32)
         self._frame_number = 0
-
+        self._count = 0
+        
         self.filename = filename
         self.file_type = file_type
         self.framerate = framerate
@@ -235,6 +236,7 @@ class VideoProcessing(Thread):
         self.resolution = (width, height)
         self.background_frame = None
         self.last_frame = None
+        self.last_box = None
 
         # Object detection algorithm perameters
         self.blob_params = None
@@ -308,19 +310,32 @@ class VideoProcessing(Thread):
             buf: A buffer representing the image.
         """
         image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
-        image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
-        #frame, box = self.sequential_frame_subtraction(image, 30, 900)
-        frame, box = self.background_frame_subtraction(image, 30, 900)
+        image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)        
+        if self._frame_number % 4 != 0:
+            if self.last_box is not None:                
+                box = self.last_box
+                cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
+                
+            cv2.imshow('Image', image)
+            self.cv_write_video(image)
+            return
+
+        frame, box = self.sequential_frame_subtraction(image, 30, 1500)
+        #frame, box = self.background_frame_subtraction(image, 30, 1500)
         #frame, box = self.mog_subtraction(image, 30, 900)
         #frame, box = self.blob_detection(image, 900)
-
+        #frame, box = self.gmg_subtraction(image, 2000)
+        if box is None:
+            box = self.last_box
+            if box is None:
+                return
         # If we detected something then hand it to the tracker
         #if box is not None:
         #    image = self._tracker.track(image, box)
-
-        cv2.imshow('Image', frame)
-        #self.cv_write_video(image)
-        self._frame_number += 1
+        cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
+        cv2.imshow('Image', image)
+        self.cv_write_video(image)
+        self.last_box = box
 
     def background_frame_subtraction(self, np_buffer, threshold, minimum_area):
         """Object detection using frame subtraction.
@@ -341,7 +356,7 @@ class VideoProcessing(Thread):
             then box is None.
         """
         frame = cv2.GaussianBlur(np_buffer, (21, 21), 0)
-        if self.background_frame is None:
+        if self.background_frame is None or self._frame_number % 100 == 0:
             print('Setting Background')
             self.background_frame = frame
 
@@ -351,13 +366,10 @@ class VideoProcessing(Thread):
         _, contours, _ = cv2.findContours(frame, cv2.RETR_LIST,
                                           cv2.CHAIN_APPROX_SIMPLE)
 
-        # We only look at the first item in the list
-        #
-        #                        ^
-        # TODO: Make this better |
         box = None
         for contour in contours:
-            if cv2.contourArea(contour) > minimum_area:
+            area = cv2.contourArea(contour)
+            if area > minimum_area and area < 3500:
                 x_pos, y_pos, width, height = cv2.boundingRect(contour)
                 box = (x_pos, y_pos, x_pos+width, y_pos+height)
 
@@ -458,30 +470,47 @@ class VideoProcessing(Thread):
             well as a list of tuples describing the center of each objected
             detected.
         """
+        print(self._count)
+        self._count += 1        
         frame = np.reshape(np_buffer, (self.height, self.width))
+        #frame = cv2.GaussianBlur(frame, (7, 7), 0)        
         if self.kernel is None:
             self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         if self.gmg is None:
-            self.gmg = cv2.bgsegm.createBackgroundSubtractorGMG()
+            self.gmg = cv2.bgsegm.createBackgroundSubtractorGMG(initializationFrames=100,
+                                                                decisionThreshold=0.70)
 
         frame = self.gmg.apply(frame)
         frame = cv2.morphologyEx(frame, cv2.MORPH_OPEN, self.kernel)
         _, contours, _ = cv2.findContours(frame, cv2.RETR_LIST,
                                           cv2.CHAIN_APPROX_SIMPLE)
 
-        centers = []
+        # centers = []
+        # for contour in contours:
+        #     if cv2.contourArea(contour) > minimum_area:
+        #         x_pos, y_pos, width, height = cv2.boundingRect(contour)
+        #         cv2.rectangle(frame, (x_pos, y_pos),
+        #                       (x_pos+width, y_pos+height), (255, 255, 255), 2)
+
+        #         moments = cv2.moments(contour)
+        #         centers.append(((moments['m10'] / moments['m00']),
+        #                         (moments['m01'] / moments['m00'])))
+
+        # return (frame, centers)
+
+        box = None
         for contour in contours:
-            if cv2.contourArea(contour) > minimum_area:
+            area = cv2.contourArea(contour)
+            if area > minimum_area:
                 x_pos, y_pos, width, height = cv2.boundingRect(contour)
+                box = (x_pos, y_pos, x_pos+width, y_pos+height)
                 cv2.rectangle(frame, (x_pos, y_pos),
                               (x_pos+width, y_pos+height), (255, 255, 255), 2)
+                break
 
-                moments = cv2.moments(contour)
-                centers.append(((moments['m10'] / moments['m00']),
-                                (moments['m01'] / moments['m00'])))
 
-        return (frame, centers)
-
+        return (frame, box)
+        
 
     # Have not really used this
     def blob_detection(self, np_buffer, minimum_area):
