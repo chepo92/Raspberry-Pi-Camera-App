@@ -15,6 +15,7 @@ from threading import Thread
 
 import io
 import cv2
+import os
 
 import numpy as np
 
@@ -270,6 +271,12 @@ class VideoProcessing(Thread):
         self._frame_number += 1
         return len(buf)
 
+    def rename(self, new_name):
+        """Changes the filename of the video"""
+        new_name = '.'.join(new_name.split('.')[:-1]) + '.mp4'
+        os.rename(self.mp4_filename, new_name)
+        self.mp4_filename = new_name
+
     def run(self):
         """Runs the processes that have been queued up.
 
@@ -310,16 +317,16 @@ class VideoProcessing(Thread):
             buf: A buffer representing the image.
         """
         image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
-        image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)        
-        if self._frame_number % 4 != 0:
+        image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
+        if self._frame_number % 30 != 0:
             if self.last_box is not None:                
                 box = self.last_box
                 cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
                 
-            cv2.imshow('Image', image)
+            #cv2.imshow('Image', image)
             self.cv_write_video(image)
             return
-
+        
         frame, box = self.sequential_frame_subtraction(image, 30, 1500)
         #frame, box = self.background_frame_subtraction(image, 30, 1500)
         #frame, box = self.mog_subtraction(image, 30, 900)
@@ -333,7 +340,7 @@ class VideoProcessing(Thread):
         #if box is not None:
         #    image = self._tracker.track(image, box)
         cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
-        cv2.imshow('Image', image)
+        #cv2.imshow('Image', image)
         self.cv_write_video(image)
         self.last_box = box
 
@@ -365,7 +372,6 @@ class VideoProcessing(Thread):
         _, frame = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
         _, contours, _ = cv2.findContours(frame, cv2.RETR_LIST,
                                           cv2.CHAIN_APPROX_SIMPLE)
-
         box = None
         for contour in contours:
             area = cv2.contourArea(contour)
@@ -382,7 +388,8 @@ class VideoProcessing(Thread):
 
     def sequential_frame_subtraction(self, np_buffer, threshold, minimum_area):
         frame = cv2.GaussianBlur(np_buffer, (5, 5), 0)
-
+        #frame = cv2.pyrDown(np_buffer)
+        
         if self.last_frame is None:
             self.last_frame = frame
 
@@ -470,7 +477,8 @@ class VideoProcessing(Thread):
             well as a list of tuples describing the center of each objected
             detected.
         """
-        print(self._count)
+        if self._count < 50:
+            print(self._count)
         self._count += 1        
         frame = np.reshape(np_buffer, (self.height, self.width))
         #frame = cv2.GaussianBlur(frame, (7, 7), 0)        
@@ -638,6 +646,16 @@ class VideoHandler(object):
                 self.log_stream.write('%f\n' %(timestamp / 1000.0))
 
         self.frame_count += 1
+
+    def rename(self, new_name):
+        """Changes the name of the saved video.
+
+        Args:
+            new_name: The new name that the file will be changed to.
+        """
+        # Let the video processing unit take care of it
+        self.video.rename(new_name)
+        
     def flush(self):
         """Flushes the writing streams."""
         self.video_stream.flush()

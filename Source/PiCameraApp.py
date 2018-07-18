@@ -839,7 +839,6 @@ class PiCameraApp ( Frame ):
 		else:
 			self.TakeVideo.config(text='Video')
 			self.camera.stop_recording()
-			self.video_handler.close()
 			self.photoCanvas.itemconfigure('capture',state='hidden')
 			if PreferencesDialog.VideoTimestamp is True:
 				filename = 'Video_' + \
@@ -854,6 +853,7 @@ class PiCameraApp ( Frame ):
 				initialfile = filename )
 			# This is wrong. I should rework this
 			if filename:
+				self.video_handler.rename(filename)
 				try:
 					os.rename(self.TempFile,filename)
 				except:
@@ -867,6 +867,9 @@ class PiCameraApp ( Frame ):
 					os.remove(self.TempFile + self.LogFileExtention)
 				
 				except:	pass
+				
+			self.video_handler.close()
+			
 	def UpdateCaptureInProgress ( self ):
 		if not self.InCaptureVideo: return
 		# keep updating video capture time
