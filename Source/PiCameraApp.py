@@ -853,21 +853,27 @@ class PiCameraApp ( Frame ):
 				initialdir = PreferencesDialog.DefaultVideoDir,
 				initialfile = filename )
 			# This is wrong. I should rework this
-			if filename:
-				self.video_handler.rename(filename)
-				try:
-					os.rename(self.TempFile,filename)
-				except:
-					pass
-				if self.LogFileExtention:
-					os.rename(self.TempFile + self.LogFileExtention,
-						  filename + self.LogFileExtention)
-			else:
-				try:
-					os.remove(self.TempFile)
-					os.remove(self.TempFile + self.LogFileExtention)
-				
-				except:	pass
+			try:
+				if filename:
+					self.video_handler.rename(filename)
+					try:
+						os.rename(self.TempFile,filename)
+					except:
+						pass
+					if self.LogFileExtention:
+						os.rename(self.TempFile + self.LogFileExtention,
+							  filename + self.LogFileExtention)
+					else:
+						try:
+							os.remove(self.TempFile)
+							os.remove(self.TempFile + self.LogFileExtention)
+							
+						except:
+							pass
+			except Exception as e:
+				print('Unknown naming error')
+				print(e)
+							
 				
 			self.video_handler.close()
 			

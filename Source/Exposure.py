@@ -233,7 +233,7 @@ class Exposure ( BasicNotepage ):
 		self.ffr = MyRadio(f,'Fixed frame rate:',True,self.FixedFrameRateBool,
 			self.FixedFrameRateChecked,1,0,'W',tip=311)
 		okCmd = (self.register(self.ValidateFixedRange),'%P')
-		self.FixedFramerateText = MyStringVar("10.0")
+		self.FixedFramerateText = MyStringVar("5.0")
 		self.FixedFramerateEntry = Entry(f,width=6,validate='all',
 			validatecommand=okCmd,textvariable=self.FixedFramerateText)
 		self.FixedFramerateEntry.grid(row=1,column=1,sticky='W')

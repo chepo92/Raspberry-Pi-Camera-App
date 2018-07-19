@@ -16,6 +16,7 @@ from threading import Thread
 import io
 import cv2
 import os
+import random
 
 import numpy as np
 
@@ -246,6 +247,8 @@ class VideoProcessing(Thread):
         self.gmg = None
         self.kernel = None
 
+        self.tracking_filename = self.filename + '.tracking.log'
+        self.tracking_stream = io.open(self.tracking_filename, 'w')
         # Switches the filename's extension with .mp4
         self.mp4_filename = '.'.join(filename.split('.')[:-1]) + '.mp4'
         # 0x00000021 is just some codec that works (not sure what it is for sure)
@@ -273,9 +276,23 @@ class VideoProcessing(Thread):
 
     def rename(self, new_name):
         """Changes the filename of the video"""
-        new_name = '.'.join(new_name.split('.')[:-1]) + '.mp4'
-        os.rename(self.mp4_filename, new_name)
-        self.mp4_filename = new_name
+        try:
+            new_mp4_name = '.'.join(new_name.split('.')[:-1]) + '.mp4'
+            os.rename(self.mp4_filename, new_mp4_name)
+            self.mp4_filename = new_mp4_name
+            new_tracking_name = '.'.join(new_name.split('.')[:-1]) + '.tracking.log'
+            os.rename(self.tracking_filename, new_tracking_name)
+            self.tracking_filename = new_tracking_name
+        except:
+            rand_num = str(random.randint(1, 1000000))
+            new_mp4_name = '/'.join(self.mp4_filename.split('/')[:-1]) + '/recovedVideo' + rand_num + '.mp4'
+            os.rename(self.mp4_filename, new_mp4_name)
+            self.mp4_filename = new_mp4_name
+            
+            new_tracking_name = '/'.join(new_name.split('/')[:-1]) + '/recovedVideo' + rand_num + '.tracking.log'
+            os.rename(self.tracking_filename, new_tracking_name)
+            self.tracking_filename = new_tracking_name
+            print('Error: could not use that name, name this video as %s' % new_name)
 
     def run(self):
         """Runs the processes that have been queued up.
@@ -310,6 +327,12 @@ class VideoProcessing(Thread):
         """
         self.video_writer.write(frame)
 
+    def write_tracking(self, box=None):
+        if box is None:
+            self.tracking_stream.write('-1,-1,-1,-1\n')
+        else:
+            self.tracking_stream.write('{},{},{},{}\n'.format(box[0], box[1], box[2], box[3]))
+
     def process_frame(self, buf):
         """Decodes the buffer then manages the tracking.
 
@@ -318,10 +341,11 @@ class VideoProcessing(Thread):
         """
         image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
         image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
-        if self._frame_number % 30 != 0:
+        if self._frame_number % 40 != 0:
             if self.last_box is not None:                
                 box = self.last_box
-                cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
+                self.write_tracking(box)
+                #cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
                 
             #cv2.imshow('Image', image)
             self.cv_write_video(image)
@@ -335,11 +359,13 @@ class VideoProcessing(Thread):
         if box is None:
             box = self.last_box
             if box is None:
+                self.write_tracking()
                 return
         # If we detected something then hand it to the tracker
         #if box is not None:
         #    image = self._tracker.track(image, box)
-        cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
+        self.write_tracking(box)
+        #cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
         #cv2.imshow('Image', image)
         self.cv_write_video(image)
         self.last_box = box
