@@ -23,8 +23,11 @@ Note: I am an old (old, old, old, ..., so very old) Windows programmer going bac
 ## Installation
 
 Download the zip file and extract to a directory of your choosing. 
-You may have to install ImageTk
+
+You also may have to install some packages ImageTk:
+
 sudo apt-get install python-imaging
+
 sudo apt-get install python-imaging-tk
 
 ## Usage
