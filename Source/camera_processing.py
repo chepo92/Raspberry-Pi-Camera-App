@@ -222,7 +222,7 @@ class VideoProcessing(Thread):
         file_type: What type of encoding is used on the buffers that will be
         passed for decoding
     """
-    def __init__(self, filename, height, width, framerate, file_type):
+    def __init__(self, filename, height, width, framerate, file_type, tracking=True):
         super(VideoProcessing, self).__init__()
         self._event = Event()
         self._tracker = Tracker()
@@ -236,6 +236,7 @@ class VideoProcessing(Thread):
         self.height = height
         self.width = width
         self.resolution = (width, height)
+        self.tracking = tracking
         self.background_frame = None
         self.last_frame = None
         self.last_box = None
@@ -276,6 +277,9 @@ class VideoProcessing(Thread):
 
     def rename(self, new_name):
         """Changes the filename of the video"""
+        new_name = new_name.replace(':', '\:')
+        new_name = new_name.replace('&', '\&')
+        new_name = new_name.replace('#', '\#')
         try:
             new_mp4_name = '.'.join(new_name.split('.')[:-1]) + '.mp4'
             os.rename(self.mp4_filename, new_mp4_name)
@@ -292,7 +296,7 @@ class VideoProcessing(Thread):
             new_tracking_name = '/'.join(new_name.split('/')[:-1]) + '/recovedVideo' + rand_num + '.tracking.log'
             os.rename(self.tracking_filename, new_tracking_name)
             self.tracking_filename = new_tracking_name
-            print('Error: could not use that name, name this video as %s' % new_name)
+            print('Error: could not use that name, name this video as %s' % new_mp4_name)
 
     def run(self):
         """Runs the processes that have been queued up.
@@ -341,16 +345,17 @@ class VideoProcessing(Thread):
         """
         image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
         image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
-        if self._frame_number % 40 != 0:
-            if self.last_box is not None:                
-                box = self.last_box
-                self.write_tracking(box)
+        print(self._frame_number)
+        if self._frame_number % 40 != 0 or self.tracking is False:
+            #if self.last_box is not None:                
+            #    box = self.last_box
                 #cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
-                
+
+            self.write_tracking(self.last_box)
             #cv2.imshow('Image', image)
             self.cv_write_video(image)
             return
-        
+        print("hello")
         frame, box = self.sequential_frame_subtraction(image, 30, 1500)
         #frame, box = self.background_frame_subtraction(image, 30, 1500)
         #frame, box = self.mog_subtraction(image, 30, 900)
@@ -627,7 +632,7 @@ class VideoHandler(object):
         video_file: The file name/path for writing video to.
         log_file_extension: The name to appened to the timestamp file.
     """
-    def __init__(self, camera, video_file, log_file_extension='.timestamp.log'):
+    def __init__(self, camera, video_file, log_file_extension='.timestamp.log', tracking=True):
         self.camera = camera
         self.video_file = video_file
         self.log_file_extension = log_file_extension
@@ -636,6 +641,7 @@ class VideoHandler(object):
         self.height = camera.resolution.height
         self.width = camera.resolution.width
         self.framerate = camera.framerate
+        self.tracking = tracking
         if self.file_type == 'yuv':
             self.height = (self.height + 15) // 16 * 16
             self.width = (self.height + 15) // 16 * 16
@@ -643,7 +649,8 @@ class VideoHandler(object):
         self.frame_count = 0
         self.video = VideoProcessing(video_file, height=self.height,
                                      width=self.width, framerate=self.framerate,
-                                     file_type=self.file_type)
+                                     file_type=self.file_type,
+                                     tracking=self.tracking)
         self.log_stream = None
         if log_file_extension is not None:
             self.log_stream = io.open(video_file + log_file_extension, 'w')

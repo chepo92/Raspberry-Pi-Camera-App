@@ -51,9 +51,9 @@ the library is in BOARD mode.
 '''
 
 try:
-	import 	picamera
-	from 		picamera import *
-	import 	picamera.array
+	import	picamera
+	from		picamera import *
+	import	picamera.array
 except ImportError:
 	raise ImportError("You do not seem to have picamera installed")
 
@@ -62,25 +62,25 @@ try:
 except ImportError:
 	from tkinter import *	# Python 3.X
 try:
-	from 		tkColorChooser import askcolor
+	from		tkColorChooser import askcolor
 except ImportError:
 	from		tkinter.colorchooser import askcolor
 try:
-	import 	tkFileDialog as FileDialog
+	import	tkFileDialog as FileDialog
 except ImportError:
 	import	tkinter.filedialog as FileDialog
 try:
-	import 	tkMessageBox as MessageBox
+	import	tkMessageBox as MessageBox
 except ImportError:
 	import	tkinter.messagebox as MessageBox
 try:
-	import 	ttk
-	from 		ttk import *
+	import	ttk
+	from		ttk import *
 except ImportError:
 	from		tkinter import ttk
-	from 		tkinter.ttk import *
+	from		tkinter.ttk import *
 try:
-	import 	tkFont
+	import	tkFont
 except ImportError:
 	import	tkinter.font
 
@@ -93,8 +93,8 @@ except ImportError:
 	raise ("ImageTk not installed. If running Python 3.x\n" \
 			 "Use: sudo apt-get install python3-pil.imagetk")
 
-from 	AboutDialog import *
-from 	PreferencesDialog import *
+from	AboutDialog import *
+from	PreferencesDialog import *
 from	AnnotationOverlay import *
 from	KeyboardShortcuts import *
 from	Mapping import *
@@ -105,7 +105,7 @@ from	FinerControl import *
 from	Exposure import *
 from	Timelapse import *
 from	Utils import *
-from    camera_processing import VideoHandler
+from	camera_processing import VideoHandler
 
 #
 # Main PiCameraApp Window
@@ -338,7 +338,7 @@ class PiCameraApp ( Frame ):
 		self.photoCanvas.bind("<ButtonRelease-1>",self.photoCanvasButtonUp)
 		self.photoCanvas.bind("<Enter>",self.photoCanvasEnterLeave)
 		self.photoCanvas.bind("<Leave>",self.photoCanvasEnterLeave)
-		self.InPhotoZoom = False 	# hack -
+		self.InPhotoZoom = False	# hack -
 		# self.PhotoState = 'none', 'picture', 'zoom', 'video' ???
 
 		vsbar = Scrollbar(RightFrame,orient=VERTICAL)
@@ -400,6 +400,11 @@ class PiCameraApp ( Frame ):
 		#b.config(state='disabled')
 		ToolTip(b, msg=15)
 
+		self.ComputeTracking = MyBooleanVar(True)
+		b = ttk.Checkbutton(ButtonFrame, text='Tracking', variable=self.ComputeTracking)
+		b.grid(row=1, column=5, sticky='W')
+		#ToolTip(b, msg=16)
+		
 		self.pw.add(self.TopFrame)
 		self.pw.add(BottomFrame)
 
@@ -672,7 +677,7 @@ class PiCameraApp ( Frame ):
 			# Set zoom of window.....
 			#### TODO: We should account for previous levels of zoom
 			x = float(coords[0]) / float(self.CurrentImageSize[0])
-			y = float(coords[1]) /  float(self.CurrentImageSize[1])
+			y = float(coords[1]) /	float(self.CurrentImageSize[1])
 			width = float(coords[2] - coords[0]) / float(self.CurrentImageSize[0])
 			height = float(coords[3] - coords[1]) / float(self.CurrentImageSize[1])
 			self.BasicControlsFrame.SetZoom (x,y,width,height)
@@ -820,7 +825,8 @@ class PiCameraApp ( Frame ):
 				self.LogFileExtention = '.timestamp.log'
 
 			if self.VidFormat == 'h264':			    
-				self.video_handler = VideoHandler(self.camera, self.TempFile)
+				self.video_handler = VideoHandler(self.camera, self.TempFile,
+								  tracking=self.ComputeTracking.get())
 			
 				self.camera.start_recording(output=self.video_handler,
 					format=self.VidFormat,profile=H264.Profile,level=H264.Level,
@@ -829,10 +835,12 @@ class PiCameraApp ( Frame ):
 					sps_timing=H264.SPSTiming,motion_output=H264.MotionOutput)
 			elif self.VidFormat == 'yuv':
 				self.video_handler = CameraYUVStream(self.camera, self.TempFile)
-				self.camera.start_recording(output=self.video_handler, format='yuv')
+				self.camera.start_recording(output=self.video_handler, format='yuv',
+							    tracking=self.ComputeTracking.get())
 				
 			else:	# generic - we can use anything
-				self.video_handler = VideoHandler(self.camera, self.TempFile)
+				self.video_handler = VideoHandler(self.camera, self.TempFile,
+								  tracking=self.ComputeTracking.get())
 				self.camera.start_recording(output=self.video_handler,
 							    format=self.VidFormat)
 			self.photoCanvas.itemconfigure('capture',state='normal')
@@ -1010,7 +1018,7 @@ class PiCameraApp ( Frame ):
 							The Combobox is a problem.
 		Could save last two entries... if Combobox, Labelframe, Tk...
 		NO! this could be the Topwindow losing focus while the
-		Combobox has the focus.  The same effect
+		Combobox has the focus.	 The same effect
 		Also, the nesting may vary based on where the Combobox is in
 		the hierarcy. What I really want is to capture the <B1-Motion>
 		on the TopWindow titlebar - OR - get the widget ID to the

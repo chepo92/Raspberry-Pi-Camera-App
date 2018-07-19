@@ -149,7 +149,7 @@ class Exposure ( BasicNotepage ):
 
 		#------------------- Auto White Balance --------------------
 		f = ttk.LabelFrame(self,text='Auto white balance settings',padding=(5,5,5,5))
-		f.grid(row=2,column=0,columnspan=5,sticky='NEWS',pady=5)
+		f.grid(row=4,column=0,columnspan=5,sticky='NEWS',pady=5)
 		#f.columnconfigure(2,weight=1)
 		#f.columnconfigure(4,weight=1)
 
@@ -221,7 +221,7 @@ class Exposure ( BasicNotepage ):
 
 		#------------------- Frame Rate --------------------
 		self.FPSText = None
-		f = MyLabelFrame(self,'Frame rate',4,0,span=4)
+		f = MyLabelFrame(self,'Frame rate',2,0,span=4)
 		#f.columnconfigure(2,weight=1)
 
 		l = Label(f,text='Current frame rate:').grid(row=0,column=0,sticky='W')
