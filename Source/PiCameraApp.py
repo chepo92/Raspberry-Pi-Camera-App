@@ -447,9 +447,9 @@ class PiCameraApp ( Frame ):
 
 		filemenu = Menu(menubar,tearoff=0,foreground='black',background='#F0F0F0',
 		activebackground='#86ABD9',activeforeground='white')
-		#filemenu.add_command(label="Save Camera setups...",underline=0,
-			#command=lambda e=None:self.SaveCameraSetups(e))
-		#filemenu.add_separator()
+		filemenu.add_command(label="Save Camera setups...",underline=0,
+			command=lambda e=None:self.SaveCameraSetups(e))
+		filemenu.add_separator()
 		filemenu.add_command(label="Preferences...",underline=0,
 			image=self.iconPrefs, compound='left',
 			command=lambda e=None:self.SystemPreferences(e))
