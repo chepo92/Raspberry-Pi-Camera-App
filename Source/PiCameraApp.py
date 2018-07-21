@@ -394,7 +394,7 @@ class PiCameraApp ( Frame ):
 		ToolTip(b, msg=13)
 
 		## TODO: Need to make a tooltip
-		self.WriteTimestamps = MyBooleanVar(False)
+		self.WriteTimestamps = MyBooleanVar(True)
 		b = ttk.Checkbutton(ButtonFrame, text='Timestamps', variable=self.WriteTimestamps)
 		b.grid(row=0,column=5,sticky='W')
 		#b.config(state='disabled')
@@ -804,6 +804,7 @@ class PiCameraApp ( Frame ):
 		self.InCaptureVideo = not self.InCaptureVideo
 
 		if self.InCaptureVideo:
+			print('Starting')
 			self.TakeVideo.config(text='Stop')
 			self.time = time()
 			#### TODO: do this as a stream. Can we then play it in
