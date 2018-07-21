@@ -63,8 +63,8 @@ except ImportError:
 class PreferencesDialog ( Dialog ):
 	# Static variables
 	DefaultPhotoDir = "/home/pi/Pictures"
-	#DefaultVideoDir = "/home/pi/Videos"
-	DefaultVideoDir = "/media/pi/UNTITLED"
+	DefaultVideoDir = "/home/pi/Videos"
+	#DefaultVideoDir = "/media/pi/UNTITLED"
 	#DefaultVideoDir = "/run/user/1000/gvfs/afp-volume:host=mohajerani-nas.local,volume=storage/homes/zachary.selk/testFolder"
 	DefaultFilesDir = "/home/pi/Documents"
 	DefaultPhotoFormat = 'jpeg'

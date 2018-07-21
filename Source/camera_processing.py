@@ -209,7 +209,8 @@ class Tracker(object):
         return frame
 
 
-class VideoProcessing(Thread):
+#class VideoProcessing(Thread):
+class VideoProcessing:
     """Handles video processing
 
     Args:
@@ -260,9 +261,9 @@ class VideoProcessing(Thread):
                                             self.framerate,
                                             self.resolution,
                                             self.write_in_color)
-        self.start()
+        #self.start()
 
-    def write(self, buf):
+    def write(self, buf, image=None):
         """Handles then writes a frame buffer.
 
         Args:
@@ -271,9 +272,12 @@ class VideoProcessing(Thread):
         Returns:
             Returns the length of the recieved buffer.
         """
-        self._queue.put((buf, self._frame_number))
-        self._frame_number += 1
-        return len(buf)
+        yuv = False
+        if image is not None:
+            yuv = True
+        #self._queue.put((buf, self._frame_number, yuv))
+        #self._frame_number += 1
+        self.process_frame(buf=buf, image=image)
 
     def rename(self, new_name):
         """Changes the filename of the video"""
@@ -305,11 +309,14 @@ class VideoProcessing(Thread):
         """
         while not self._event.wait(0):
             try:
-                buf, _ = self._queue.get(timeout=0.1)
+                buf, _, yuv = self._queue.get(timeout=0.01)
             except Empty:
                 pass
             else:
-                self.process_frame(buf)
+                if yuv is True:
+                    self.process_frame(buf=None, image=buf)
+                else:
+                    self.process_frame(buf)
                 self._queue.task_done()
 
     def cv_write_image(self, frame, file_type='.jpeg'):
@@ -337,16 +344,18 @@ class VideoProcessing(Thread):
         else:
             self.tracking_stream.write('{},{},{},{}\n'.format(box[0], box[1], box[2], box[3]))
 
-    def process_frame(self, buf):
+    def process_frame(self, buf, image=None):
         """Decodes the buffer then manages the tracking.
 
         Args:
             buf: A buffer representing the image.
         """
-        image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
-        image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
-        print(self._frame_number)
-        if self._frame_number % 40 != 0 or self.tracking is False:
+        self._frame_number += 1
+        if image is None:
+            image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
+            image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
+        #    pass
+        if self._frame_number % 1 != 0 or self.tracking is False:
             #if self.last_box is not None:                
             #    box = self.last_box
                 #cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
@@ -355,7 +364,7 @@ class VideoProcessing(Thread):
             #cv2.imshow('Image', image)
             self.cv_write_video(image)
             return
-        print("hello")
+        
         frame, box = self.sequential_frame_subtraction(image, 30, 1500)
         #frame, box = self.background_frame_subtraction(image, 30, 1500)
         #frame, box = self.mog_subtraction(image, 30, 900)
@@ -372,6 +381,7 @@ class VideoProcessing(Thread):
         self.write_tracking(box)
         #cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
         #cv2.imshow('Image', image)
+        #cv2.waitKey(0)
         self.cv_write_video(image)
         self.last_box = box
 
@@ -618,7 +628,7 @@ class VideoProcessing(Thread):
         self.flush()
         self.video_writer.release()
         self._event.set()
-        self.join()
+        #self.join()
 
 
 class VideoHandler(object):
@@ -644,16 +654,21 @@ class VideoHandler(object):
         self.tracking = tracking
         if self.file_type == 'yuv':
             self.height = (self.height + 15) // 16 * 16
-            self.width = (self.height + 15) // 16 * 16
+            self.width = (self.width+31) // 32 * 32
 
         self.frame_count = 0
-        self.video = VideoProcessing(video_file, height=self.height,
-                                     width=self.width, framerate=self.framerate,
-                                     file_type=self.file_type,
-                                     tracking=self.tracking)
+        if self.tracking is True:
+            self.video = VideoProcessing(video_file, height=self.height,
+                                         width=self.width, framerate=self.framerate,
+                                         file_type=self.file_type,
+                                         tracking=self.tracking)
+        else:
+            self.video = io.open(video_file, 'wb')
+
+        self.log_file_name = video_file + log_file_extension
         self.log_stream = None
         if log_file_extension is not None:
-            self.log_stream = io.open(video_file + log_file_extension, 'w')
+            self.log_stream = io.open(self.log_file_name, 'w')
 
 
     def write(self, buf):
@@ -669,9 +684,12 @@ class VideoHandler(object):
             # The first portion of yuv is luminescence (grayscale)
             luminescence = np.frombuffer(buf, dtype=np.uint8,
                                          count=self.width*self.height)
-            buf = cv2.encode('png', luminescence)
-        self.video.write(buf)
-
+            luminescence = np.resize(luminescence, (self.height, self.width))
+            #buf = cv2.encode('png', luminescence)
+            self.video.write(buf=None, image=luminescence)
+        else:
+            self.video.write(buf)
+            
         timestamp = self.camera.frame.timestamp
         if self.log_stream is not None:
             if self.camera.frame.complete and timestamp:
@@ -687,7 +705,14 @@ class VideoHandler(object):
             new_name: The new name that the file will be changed to.
         """
         # Let the video processing unit take care of it
-        self.video.rename(new_name)
+        # os.rename(self.video_file, new_name)
+        # new_log_name = new_name + self.log_file_extension
+        # print(new_log_name)
+        # os.rename(self.log_file_name, new_log_name)
+        try:
+            self.video.rename(new_name)
+        except:
+            pass
         
     def flush(self):
         """Flushes the writing streams."""

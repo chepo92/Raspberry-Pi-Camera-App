@@ -827,20 +827,31 @@ class PiCameraApp ( Frame ):
 			if self.VidFormat == 'h264':			    
 				self.video_handler = VideoHandler(self.camera, self.TempFile,
 								  tracking=self.ComputeTracking.get())
-			
+
+				#if self.ComputeTracking.get() is True:
+				#	output = self.video_handler
+				#else:
+				#	output = self.TempFile
+					
 				self.camera.start_recording(output=self.video_handler,
-					format=self.VidFormat,profile=H264.Profile,level=H264.Level,
-					intra_period=H264.IntraPeriod,intra_refresh=H264.IntraRefresh,
-					inline_headers=H264.InlineHeaders,sei=H264.SEI,
-					sps_timing=H264.SPSTiming,motion_output=H264.MotionOutput)
-			elif self.VidFormat == 'yuv':
-				self.video_handler = CameraYUVStream(self.camera, self.TempFile)
-				self.camera.start_recording(output=self.video_handler, format='yuv',
-							    tracking=self.ComputeTracking.get())
+							    format=self.VidFormat,profile=H264.Profile,level=H264.Level,
+							    intra_period=H264.IntraPeriod,intra_refresh=H264.IntraRefresh,
+							    inline_headers=H264.InlineHeaders,sei=H264.SEI,
+							    sps_timing=H264.SPSTiming,motion_output=H264.MotionOutput)
+
+			#elif self.VidFormat == 'yuv':
+			#	self.video_handler = CameraYUVStream(self.camera, self.TempFile)
+			#	self.camera.start_recording(output=self.video_handler, format='yuv',
+			#				    tracking=self.ComputeTracking.get())
 				
 			else:	# generic - we can use anything
 				self.video_handler = VideoHandler(self.camera, self.TempFile,
 								  tracking=self.ComputeTracking.get())
+				if self.ComputeTracking.get() is True:
+					output = self.video_handler
+				else:
+					output = self.TempFile
+				
 				self.camera.start_recording(output=self.video_handler,
 							    format=self.VidFormat)
 			self.photoCanvas.itemconfigure('capture',state='normal')
