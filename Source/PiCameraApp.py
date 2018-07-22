@@ -269,6 +269,20 @@ class PiCameraApp ( Frame ):
 		self.WindowSize.set(255)
 		ToolTip(self.WindowSize, msg=6)
 
+		self.ComputeTracking = MyBooleanVar(True)
+		b = ttk.Checkbutton(ButtonFrame, text='Tracking', variable=self.ComputeTracking,
+				    command=self.ToggleTracking)
+		b.grid(row=1, column=0, padx=5, sticky='W')
+		
+		self.ComputeFPSVar = MyIntVar(1)
+		self.DiscreteComputeFPS = [
+			MyRadio(ButtonFrame, '1fps', 1, self.ComputeFPSVar, None, 1, 1, 'W'),
+			MyRadio(ButtonFrame, '2fps', 2, self.ComputeFPSVar, None, 1, 2, 'W'),
+			MyRadio(ButtonFrame, '3fps', 3, self.ComputeFPSVar, None, 1, 3, 'W'),
+			MyRadio(ButtonFrame, '4fps', 4, self.ComputeFPSVar, None, 1, 4, 'W'),
+			MyRadio(ButtonFrame, '5fps', 5, self.ComputeFPSVar, None, 1, 5, 'W')
+		]
+		
 		#------------------ Photo / Video Section ----------------------
 		self.pictureStream = io.BytesIO()
 
@@ -400,11 +414,6 @@ class PiCameraApp ( Frame ):
 		#b.config(state='disabled')
 		ToolTip(b, msg=15)
 
-		self.ComputeTracking = MyBooleanVar(True)
-		b = ttk.Checkbutton(ButtonFrame, text='Tracking', variable=self.ComputeTracking)
-		b.grid(row=1, column=5, sticky='W')
-		#ToolTip(b, msg=16)
-		
 		self.pw.add(self.TopFrame)
 		self.pw.add(BottomFrame)
 
@@ -797,6 +806,13 @@ class PiCameraApp ( Frame ):
 		'''
 			Implement Record Sequence
 		'''
+	def ToggleTracking(self):
+		if self.ComputeTracking.get() is True:
+			state = 'normal'
+		else:
+			state = 'disabled'
+		for fps in self.DiscreteComputeFPS:
+			fps.config(state=state)
 	def ToggleVideo ( self, event ):
 		if self.camera.framerate == 0 and \
 			PreferencesDialog.DefaultVideoFormat == 'h264':
@@ -826,7 +842,8 @@ class PiCameraApp ( Frame ):
 
 			if self.VidFormat == 'h264':			    
 				self.video_handler = VideoHandler(self.camera, self.TempFile,
-								  tracking=self.ComputeTracking.get())
+								  tracking=self.ComputeTracking.get(),
+								  tacking_fps=self.ComputeFPSVar.get())
 
 				#if self.ComputeTracking.get() is True:
 				#	output = self.video_handler
@@ -846,7 +863,8 @@ class PiCameraApp ( Frame ):
 				
 			else:	# generic - we can use anything
 				self.video_handler = VideoHandler(self.camera, self.TempFile,
-								  tracking=self.ComputeTracking.get())
+								  tracking=self.ComputeTracking.get(),
+								  tracking_fps=self.ComputeFPSVar.get())
 				if self.ComputeTracking.get() is True:
 					output = self.video_handler
 				else:

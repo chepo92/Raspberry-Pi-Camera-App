@@ -223,7 +223,7 @@ class VideoProcessing:
         file_type: What type of encoding is used on the buffers that will be
         passed for decoding
     """
-    def __init__(self, filename, height, width, framerate, file_type, tracking=True):
+    def __init__(self, filename, height, width, framerate, file_type, tracking=True, tracking_fps=1):
         super(VideoProcessing, self).__init__()
         self._event = Event()
         self._tracker = Tracker()
@@ -238,6 +238,7 @@ class VideoProcessing:
         self.width = width
         self.resolution = (width, height)
         self.tracking = tracking
+        self.tracking_fps = tracking_fps
         self.background_frame = None
         self.last_frame = None
         self.last_box = None
@@ -350,12 +351,14 @@ class VideoProcessing:
         Args:
             buf: A buffer representing the image.
         """
+
         self._frame_number += 1
         if image is None:
             image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
             image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
         #    pass
-        if self._frame_number % 1 != 0 or self.tracking is False:
+        # Need something better than this
+        if self._frame_number % round(self.framerate/self.tracking_fps) != 0  or self.tracking is False:
             #if self.last_box is not None:                
             #    box = self.last_box
                 #cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
@@ -364,7 +367,7 @@ class VideoProcessing:
             #cv2.imshow('Image', image)
             self.cv_write_video(image)
             return
-        
+
         frame, box = self.sequential_frame_subtraction(image, 30, 1500)
         #frame, box = self.background_frame_subtraction(image, 30, 1500)
         #frame, box = self.mog_subtraction(image, 30, 900)
@@ -372,9 +375,9 @@ class VideoProcessing:
         #frame, box = self.gmg_subtraction(image, 2000)
         if box is None:
             box = self.last_box
-            if box is None:
-                self.write_tracking()
-                return
+            # if box is None:
+            #     self.write_tracking()
+            #     return
         # If we detected something then hand it to the tracker
         #if box is not None:
         #    image = self._tracker.track(image, box)
@@ -642,7 +645,7 @@ class VideoHandler(object):
         video_file: The file name/path for writing video to.
         log_file_extension: The name to appened to the timestamp file.
     """
-    def __init__(self, camera, video_file, log_file_extension='.timestamp.log', tracking=True):
+    def __init__(self, camera, video_file, log_file_extension='.timestamp.log', tracking=True, tracking_fps=1):
         self.camera = camera
         self.video_file = video_file
         self.log_file_extension = log_file_extension
@@ -652,6 +655,7 @@ class VideoHandler(object):
         self.width = camera.resolution.width
         self.framerate = camera.framerate
         self.tracking = tracking
+        self.tracking_fps = tracking_fps
         if self.file_type == 'yuv':
             self.height = (self.height + 15) // 16 * 16
             self.width = (self.width+31) // 32 * 32
@@ -661,7 +665,8 @@ class VideoHandler(object):
             self.video = VideoProcessing(video_file, height=self.height,
                                          width=self.width, framerate=self.framerate,
                                          file_type=self.file_type,
-                                         tracking=self.tracking)
+                                         tracking=self.tracking,
+                                         tracking_fps=self.tracking_fps)
         else:
             self.video = io.open(video_file, 'wb')
 

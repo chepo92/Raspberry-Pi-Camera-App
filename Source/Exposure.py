@@ -12,7 +12,7 @@
 #
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
@@ -23,15 +23,15 @@
 '''
 
 try:
-	import 	ttk
-	from 		ttk import *
+	import	ttk
+	from		ttk import *
 except ImportError:
 	from		tkinter import ttk
-	from 		tkinter.ttk import *
+	from		tkinter.ttk import *
 
 from	PiCameraApp import *
-from 	Dialog import *
-from 	Mapping import *
+from	Dialog import *
+from	Mapping import *
 from	NotePage import *
 from	Utils import *
 
@@ -229,45 +229,61 @@ class Exposure ( BasicNotepage ):
 		self.FrameRate.grid(row=0,column=1,columnspan=3,sticky='W')
 		ToolTip(self.FrameRate,310)
 
-		self.FixedFrameRateBool = MyBooleanVar(True)
-		self.ffr = MyRadio(f,'Fixed frame rate:',True,self.FixedFrameRateBool,
-			self.FixedFrameRateChecked,1,0,'W',tip=311)
+		#self.FixedFrameRateBool = MyBooleanVar(True)
+		self.FixedFrameRate = MyStringVar('Fixed')
+		self.ffr = MyRadio(f,'Fixed frame rate:','Fixed',self.FixedFrameRate,
+			self.FixedFrameRateChecked,2,0,'W',tip=311)
 		okCmd = (self.register(self.ValidateFixedRange),'%P')
 		self.FixedFramerateText = MyStringVar("15.0")
 		self.FixedFramerateEntry = Entry(f,width=6,validate='all',
 			validatecommand=okCmd,textvariable=self.FixedFramerateText)
-		self.FixedFramerateEntry.grid(row=1,column=1,sticky='W')
+		self.FixedFramerateEntry.grid(row=2,column=1,sticky='W')
 		ToolTip(self.FixedFramerateEntry,312)
-		l = Label(f,text='FPS').grid(row=1,column=2,sticky='W')
 
-		Label(f,text='Delta:').grid(row=1,column=3,sticky='E',padx=(5,0))
+		MyRadio(f, 'Discrete frame rate:', 'Discrete', self.FixedFrameRate,
+			self.FixedFrameRateChecked, 1, 0, 'W')
+		
+		self.FPSVar = MyIntVar(10)
+		#self.RadioFPS = int(FPSVar.get())
+		self.DiscreteFPS = [
+			MyRadio(f, '5fps', 5, self.FPSVar, self.FPSButton, 1, 1, 'W'),
+			MyRadio(f, '10fps', 10, self.FPSVar, self.FPSButton, 1, 2, 'W'),
+			MyRadio(f, '15fps', 15, self.FPSVar, self.FPSButton, 1, 3, 'W'),
+			MyRadio(f, '20fps', 20, self.FPSVar, self.FPSButton, 1, 4, 'W'),
+			MyRadio(f, '25fps', 25, self.FPSVar, self.FPSButton, 1, 5, 'W'),
+			MyRadio(f, '30fps', 30, self.FPSVar, self.FPSButton, 1, 6, 'W')
+		]
+
+		l = Label(f,text='FPS').grid(row=2,column=2,sticky='W')
+		
+		Label(f,text='Delta:').grid(row=2,column=3,sticky='E',padx=(5,0))
 		okCmd = (self.register(self.ValidateFramerateDelta),'%P')
 		self.FramerateDeltaText = MyStringVar("0.0")
 		self.FramerateDelta = Entry(f,width=6,validate='all',
 			validatecommand=okCmd,textvariable=self.FramerateDeltaText)
-		self.FramerateDelta.grid(row=1,column=4,sticky='W')
+		self.FramerateDelta.grid(row=2,column=4,sticky='W')
 		ToolTip(self.FramerateDelta,315)
-		Label(f,text='FPS').grid(row=1,column=5,sticky='W')
+		Label(f,text='FPS').grid(row=2,column=5,sticky='W')
 
-		MyRadio(f,'Frame rate range:',False,
-			self.FixedFrameRateBool,
-			self.FixedFrameRateChecked,2,0,'W',tip=313)
+		MyRadio(f,'Frame rate range:','Range',
+			self.FixedFrameRate,
+			self.FixedFrameRateChecked,3,0,'W',tip=313)
 		#Label(f,text='Frame rate range:').grid(row=2,column=0,sticky='W')
 		ok1Cmd = (self.register(self.ValidateFramerateRangeFrom),'%P')
 		self.FramerateRangeFromText = MyStringVar("1/6")
 		self.FramerateFrom = Entry(f,width=6,validate='all',
 			textvariable=self.FramerateRangeFromText)
-		self.FramerateFrom.grid(row=2,column=1,sticky='W')
+		self.FramerateFrom.grid(row=3,column=1,sticky='W')
 		ToolTip(self.FramerateFrom,314)
-		Label(f,text='FPS').grid(row=2,column=2,sticky='W')
-		Label(f,text='To:').grid(row=2,column=3,sticky='E')
+		Label(f,text='FPS').grid(row=3,column=2,sticky='W')
+		Label(f,text='To:').grid(row=3,column=3,sticky='E')
 		self.FramerateRangeToText = MyStringVar("30.0")
 		ok2Cmd = (self.register(self.ValidateFramerateRangeTo),'%P')
 		self.FramerateTo = Entry(f,width=6,validate='all',
 			validatecommand=ok2Cmd,textvariable=self.FramerateRangeToText)
-		self.FramerateTo.grid(row=2,column=4,sticky='W')
+		self.FramerateTo.grid(row=3,column=4,sticky='W')
 		ToolTip(self.FramerateTo,316)
-		l = Label(f,text='FPS').grid(row=2,column=5,sticky='W')
+		l = Label(f,text='FPS').grid(row=3,column=5,sticky='W')
 
 		self.FramerateFrom.config(validatecommand=ok1Cmd)
 
@@ -327,6 +343,10 @@ class Exposure ( BasicNotepage ):
 			self.IsoCombo.config(state='readonly')
 			self.IsoCombo.focus_set()
 			self.IsoChanged(None)
+
+	def FPSButton(self, fps):
+		self.camera.framerate = fps
+		
 	def ExpModeChanged ( self, event ):
 		self.camera.exposure_mode = self.ExpModeCombo.get()
 	def IsoChanged	( self, event ):
@@ -455,21 +475,33 @@ class Exposure ( BasicNotepage ):
 		self.Multiplier = int(pow(10,3 * self.ShutterSpeedCombo.current()))
 		self.ValidateShutterSpeed(self.ShutterSpeedEntry.get())
 	def FixedFrameRateChecked ( self, val ):
-		if val is True:	# Fixed frame rate
-			state = 'normal'
+		#if val is True:	# Fixed frame rate
+		if val is 'Discrete':
+			state0 = 'normal'			 
 			state1 = 'disabled'
+			state2 = 'disabled'
+			self.camera.framerate = self.FPSVar.get()
+		elif val is 'Fixed':
+			state0 = 'disabled'
+			state1 = 'normal'
+			state2 = 'disabled'
 			self.FixedFramerateEntry.focus_set()
 			self.ValidateFixedRange(self.FixedFramerateText.get())
-		else:		# Frame rate range
-			state = 'disabled'
-			state1 = 'normal'
+		#else:		# Frame rate range
+		elif val is 'Range':
+			state0 = 'disabled'			   
+			state1 = 'disabled'
+			state2 = 'normal'
 			self.ValidateFramerateRangeFrom(self.FramerateRangeFromText.get())
 			self.ValidateFramerateRangeTo(self.FramerateRangeToText.get())
 			self.FramerateFrom.focus_set()
-		self.FixedFramerateEntry.config(state=state)
-		self.FramerateDelta.config(state=state)
-		self.FramerateFrom.config(state=state1)
-		self.FramerateTo.config(state=state1)
+
+		for fps in self.DiscreteFPS:
+			fps.config(state=state0)
+		self.FixedFramerateEntry.config(state=state1)
+		self.FramerateDelta.config(state=state1)
+		self.FramerateFrom.config(state=state2)
+		self.FramerateTo.config(state=state2)
 	def ValidateEntry ( self, entry, minVal, maxVal ):
 		'''
 		Change how the edit fields work. Allow a '/' in the edit field to
