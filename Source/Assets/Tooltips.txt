@@ -51,6 +51,7 @@
 13 : Flip displayed picture vertically.\n\n IN WORK  $
 14 : Rotate camera image. Valid values are 0, 90, 180, 270. $
 15 : Writes the timestamps of each frame (in ms) to a .timestamp.log file when recording. $
+16 : Implements tracking on the video. $
 
 #-------------- Status Bar ------------------
 40: Current X/Y location of mouse on image. $

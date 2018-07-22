@@ -221,7 +221,7 @@ class VideoProcessing(Thread):
         file_type: What type of encoding is used on the buffers that will be
         passed for decoding
     """
-    def __init__(self, filename, height, width, framerate, file_type):
+    def __init__(self, filename, height, width, framerate, file_type, tracking=True):
         super(VideoProcessing, self).__init__()
         self._event = Event()
         self._tracker = Tracker()
@@ -235,6 +235,7 @@ class VideoProcessing(Thread):
         self.height = height
         self.width = width
         self.resolution = (width, height)
+        self.tracking = tracking
         self.background_frame = None
         self.last_frame = None
         self.last_box = None
@@ -318,7 +319,7 @@ class VideoProcessing(Thread):
         """
         image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
         image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
-        if self._frame_number % 30 != 0:
+        if self._frame_number % 30 != 0 or self.tracking is False:
             if self.last_box is not None:                
                 box = self.last_box
                 cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
@@ -334,12 +335,12 @@ class VideoProcessing(Thread):
         #frame, box = self.gmg_subtraction(image, 2000)
         if box is None:
             box = self.last_box
-            if box is None:
-                return
+
         # If we detected something then hand it to the tracker
         #if box is not None:
         #    image = self._tracker.track(image, box)
-        cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
+        if box is not None:
+            cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
         #cv2.imshow('Image', image)
         self.cv_write_video(image)
         self.last_box = box
@@ -601,7 +602,7 @@ class VideoHandler(object):
         video_file: The file name/path for writing video to.
         log_file_extension: The name to appened to the timestamp file.
     """
-    def __init__(self, camera, video_file, log_file_extension='.timestamp.log'):
+    def __init__(self, camera, video_file, log_file_extension='.timestamp.log', tracking=True):
         self.camera = camera
         self.video_file = video_file
         self.log_file_extension = log_file_extension
@@ -610,6 +611,7 @@ class VideoHandler(object):
         self.height = camera.resolution.height
         self.width = camera.resolution.width
         self.framerate = camera.framerate
+        self.tracking = tracking
         if self.file_type == 'yuv':
             self.height = (self.height + 15) // 16 * 16
             self.width = (self.height + 15) // 16 * 16
@@ -617,7 +619,8 @@ class VideoHandler(object):
         self.frame_count = 0
         self.video = VideoProcessing(video_file, height=self.height,
                                      width=self.width, framerate=self.framerate,
-                                     file_type=self.file_type)
+                                     file_type=self.file_type,
+                                     tracking=self.tracking)
         self.log_stream = None
         if log_file_extension is not None:
             self.log_stream = io.open(video_file + log_file_extension, 'w')

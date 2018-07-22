@@ -106,7 +106,7 @@ from	Exposure import *
 from	Timelapse import *
 from	Utils import *
 from    camera_processing import VideoHandler
-
+from    double_scrollbar_frame import DoubleScrollbarFrame
 #
 # Main PiCameraApp Window
 #
@@ -117,7 +117,7 @@ class PiCameraApp ( Frame ):
 	def __init__(self, root, camera, title):
 		Frame.__init__(self, root)
 
-		self.grid(padx=5,pady=5)
+		#self.grid(padx=5,pady=5)
 		self.root = root
 
 		self.ControlMapping = ControlMapping()
@@ -129,11 +129,18 @@ class PiCameraApp ( Frame ):
 		self.title = title
 		self.root.title(title)
 
-		master = root
+		#self.scrollbar = DoubleScrollbarFrame(root, relief='sunken')
+		#self.scrollbar.pack(side='right', fill='y')
+                ##master = root
+		master = DoubleScrollbarFrame(root, relief='sunken')
+		##master.rowconfigure(0,weight=1)
+		##master.columnconfigure(1,weight=1)
+		##master.config(padx=5,pady=5)
 
-		master.rowconfigure(0,weight=1)
-		master.columnconfigure(1,weight=1)
-		master.config(padx=5,pady=5)
+		#scrollderoot = Scrollbar(orient='vertical', command=master.yview)
+		#scrollderoot.grid(column=5, row=0, sticky='ns', in_=root)
+		#self.root.configure(yscrollcommand=scrollderoot.set)
+		
 
 		ToolTip.LoadToolTips()
 
@@ -150,13 +157,13 @@ class PiCameraApp ( Frame ):
 		self.iconVideo = GetPhotoImage(image.resize((16,16)))
 
 		#------------ Notebook with all camera control pages -----------
-		frame1 = ttk.Frame(master,padding=(5,5,5,5))
+		frame1 = ttk.Frame(master.get_frame(),padding=(5,5,5,5))
 		frame1.grid(row=0,column=0,sticky="NSEW")
 		frame1.rowconfigure(2,weight=1)
 		frame1.columnconfigure(0,weight=1)
-
+		
 		self.AlwaysPreview = False
-
+		
 		n = Notebook(frame1,padding=(5,5,5,5))
 		n.grid(row=1,column=0,rowspan=2,sticky=(N,E,W,S))
 		n.columnconfigure(0,weight=1)
@@ -193,9 +200,9 @@ class PiCameraApp ( Frame ):
 		#			ButtonFrame
 		#				Picture / Video buttons
 
-		self.pw = ttk.PanedWindow(master,orient=VERTICAL,style='TPanedwindow',
+		self.pw = ttk.PanedWindow(master.interior,orient=VERTICAL,style='TPanedwindow',
 			takefocus=True)
-		self.pw.grid(row=0,column=1,sticky="NSEW")
+		#self.pw.grid(row=0,column=1,sticky="NSEW")
 		self.pw.rowconfigure(0,weight=1)
 		self.pw.columnconfigure(0,weight=1)
 
@@ -393,12 +400,15 @@ class PiCameraApp ( Frame ):
 		b.config(state='disabled')
 		ToolTip(b, msg=13)
 
-		## TODO: Need to make a tooltip
-		self.WriteTimestamps = MyBooleanVar(False)
+		self.WriteTimestamps = MyBooleanVar(True)
 		b = ttk.Checkbutton(ButtonFrame, text='Timestamps', variable=self.WriteTimestamps)
 		b.grid(row=0,column=5,sticky='W')
-		#b.config(state='disabled')
 		ToolTip(b, msg=15)
+
+		self.DoTracking = MyBooleanVar(True)
+		b = ttk.Checkbutton(ButtonFrame, text='Tracking', variable=self.DoTracking)
+		b.grid(row=1, column=5, sticky='W')
+		ToolTip(b, msg=16)
 
 		self.pw.add(self.TopFrame)
 		self.pw.add(BottomFrame)
@@ -573,6 +583,10 @@ class PiCameraApp ( Frame ):
 		root.protocol("WM_DELETE_WINDOW", lambda e=None:self.quitProgram(e))
 
 		self.UpdateAnnotationText()
+
+		frame1.pack(padx=15, pady=15, fill=BOTH, expand=TRUE)
+		master.pack(padx=5, pady=5, expand=True, fill=BOTH)
+		
 	def ResetCameraSetups ( self, event ):
 		if MessageBox.askyesno("PiCamera", \
 										 "Reset camera settings to default values?"):
@@ -819,7 +833,8 @@ class PiCameraApp ( Frame ):
 				self.LogFileExtention = '.timestamp.log'
 
 			if self.VidFormat == 'h264':			    
-				self.video_handler = VideoHandler(self.camera, self.TempFile)
+				self.video_handler = VideoHandler(self.camera, self.TempFile,
+								  tracking=self.DoTracking)
 			
 				self.camera.start_recording(output=self.video_handler,
 					format=self.VidFormat,profile=H264.Profile,level=H264.Level,
@@ -827,11 +842,13 @@ class PiCameraApp ( Frame ):
 					inline_headers=H264.InlineHeaders,sei=H264.SEI,
 					sps_timing=H264.SPSTiming,motion_output=H264.MotionOutput)
 			elif self.VidFormat == 'yuv':
-				self.video_handler = CameraYUVStream(self.camera, self.TempFile)
+				self.video_handler = CameraYUVStream(self.camera, self.TempFile,
+								     tracking=self.DoTracking)
 				self.camera.start_recording(output=self.video_handler, format='yuv')
 				
 			else:	# generic - we can use anything
-				self.video_handler = VideoHandler(self.camera, self.TempFile)
+				self.video_handler = VideoHandler(self.camera, self.TempFile,
+								  tracking=self.DoTracking)
 				self.camera.start_recording(output=self.video_handler,
 							    format=self.VidFormat)
 			self.photoCanvas.itemconfigure('capture',state='normal')
@@ -1154,7 +1171,7 @@ def Run ():
 		return
 
 	#win.minsize(1024,768)
-	win.minsize(10,10)
+	win.minsize(60,80)
 	app = PiCameraApp(win,camera,title="PiCamera")
 	win.mainloop()
 
