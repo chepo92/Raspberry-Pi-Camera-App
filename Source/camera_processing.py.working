@@ -247,7 +247,7 @@ class VideoProcessing:
         self.last_time = None
         self.time_not_moving = 0
         
-        self.pinout = 3
+        self.pinout = 38
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.pinout, GPIO.OUT, initial=GPIO.LOW)
         self.timeout = False
@@ -349,11 +349,15 @@ class VideoProcessing:
         """
         self.video_writer.write(frame)
 
-    def write_tracking(self, box=None):
+    def write_tracking(self, box=None, sleeping=False):
+        sleep = 0
+        if sleeping is True:
+            sleep = 1
+            
         if box is None:
-            self.tracking_stream.write('-1,-1,-1,-1\n')
+            self.tracking_stream.write('-1,-1,-1,-1,{}\n'.format(sleep))
         else:
-            self.tracking_stream.write('{},{},{},{}\n'.format(box[0], box[1], box[2], box[3]))
+            self.tracking_stream.write('{},{},{},{},{}\n'.format(box[0], box[1], box[2], box[3], sleep))
 
     def process_frame(self, buf, image=None):
         """Decodes the buffer then manages the tracking.
@@ -391,6 +395,7 @@ class VideoProcessing:
         # If we detected something then hand it to the tracker
         #if box is not None:
         #    image = self._tracker.track(image, box)
+        is_sleeping = False
         if self.timeout is True:
             self.timeout_timer -= (time.time() - self.last_time)
             if self.timeout_timer <= 0:
@@ -407,18 +412,18 @@ class VideoProcessing:
             self.time_not_moving += time.time() - self.last_time
             if self.time_not_moving >= 20 and self.timeout is False:
                 GPIO.output(self.pinout, GPIO.HIGH)
-                
+                is_sleeping = True
         else:
             self.time_not_moving = 0
             GPIO.output(self.pinout, GPIO.LOW)
-            
-        self.write_tracking(box)
+
+        self.write_tracking(box, is_sleeping)
         #cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
-        cv2.imshow('Frame', frame.copy())
-        cv2.imshow('Image', image.copy())
+        #cv2.imshow('Frame', frame.copy())
+        #cv2.imshow('Image', image.copy())
         #cv2.waitKey(0)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            return
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+        #    return
         
         self.cv_write_video(image)
         self.last_box = box

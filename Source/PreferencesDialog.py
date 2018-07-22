@@ -69,7 +69,8 @@ class PreferencesDialog ( Dialog ):
 	DefaultFilesDir = "/home/pi/Documents"
 	DefaultPhotoFormat = 'jpeg'
 	#DefaultVideoFormat = 'h264'
-	DefaultVideoFormat = 'mjpeg'
+	#DefaultVideoFormat = 'mjpeg'
+	DefaultVideoFormat = 'yuv'
 	DefaultTimestampFormat = "%m-%d-%Y-%H:%M:%S"
 	PhotoTimestamp = False
 	VideoTimestamp = False
