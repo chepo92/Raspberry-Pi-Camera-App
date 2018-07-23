@@ -282,6 +282,49 @@ class PiCameraApp ( Frame ):
 			MyRadio(ButtonFrame, '4fps', 4, self.ComputeFPSVar, None, 1, 4, 'W'),
 			MyRadio(ButtonFrame, '5fps', 5, self.ComputeFPSVar, None, 1, 5, 'W')
 		]
+
+		
+		b = ttk.Button(ButtonFrame,text='Picture',underline=0,image=self.iconCameraBig,
+			compound='left',command=lambda e=None:self.TakePicture(e),width=7)
+		b.grid(row=2,column=0,sticky='W',padx=5)
+		ToolTip(b, msg=9)		 
+		
+		self.InCaptureVideo = False  # hack ----
+		self.TakeVideo = ttk.Button(ButtonFrame,text='Video',underline=0,
+			image=self.iconVideoBig,compound='left',
+			command=lambda e=None:self.ToggleVideo(e),width=7)
+		self.TakeVideo.grid(row=2,column=1,sticky='W')
+		ToolTip(self.TakeVideo, msg=10)
+
+		self.clearImage = ImageTk.PhotoImage(file='Assets/cancel_22x22.png')
+		b = ttk.Button(ButtonFrame,command=lambda e=None:self.ClearPicture(e),
+			image=self.clearImage,padding=(0,1,0,1))
+		b.grid(row=2,column=2,sticky='W',padx=5)
+		ToolTip(b, msg=11)
+
+		image = PIL.Image.open('Assets/flip.png').resize((22,22))
+		self.FlipHorzImage = ImageTk.PhotoImage(image)
+		b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureH(e),
+			image=self.FlipHorzImage,padding=(0,1,0,1))
+		b.grid(row=2,column=3,sticky='W')
+		b.config(state='disabled')
+		ToolTip(b, msg=12)
+
+		self.FlipVertImage = ImageTk.PhotoImage(image.rotate(90))
+		b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureV(e),
+			image=self.FlipVertImage,padding=(0,1,0,1))
+		b.grid(row=2,column=4,sticky='W',padx=5)
+		b.config(state='disabled')
+		ToolTip(b, msg=13)
+
+		## TODO: Need to make a tooltip
+		self.WriteTimestamps = MyBooleanVar(True)
+		b = ttk.Checkbutton(ButtonFrame, text='Timestamps', variable=self.WriteTimestamps)
+		b.grid(row=2,column=5,sticky='W')
+		#b.config(state='disabled')
+		ToolTip(b, msg=15)
+
+
 		
 		#------------------ Photo / Video Section ----------------------
 		self.pictureStream = io.BytesIO()
@@ -372,47 +415,47 @@ class PiCameraApp ( Frame ):
 		self.photoPanedWindow.add(RightFrame)
 		self.photoPanedWindow.forget(self.LeftFrame)
 
-		ButtonFrame = ttk.Frame(BottomFrame,padding=(5,5,5,5))
-		ButtonFrame.grid(row=1,column=0,columnspan=3,sticky="NEWS")
-		b = ttk.Button(ButtonFrame,text='Picture',underline=0,image=self.iconCameraBig,
-			compound='left',command=lambda e=None:self.TakePicture(e),width=7)
-		b.grid(row=0,column=0,sticky='W',padx=5)
-		ToolTip(b, msg=9)
+		# ButtonFrame = ttk.Frame(BottomFrame,padding=(5,5,5,5))
+		# ButtonFrame.grid(row=1,column=0,columnspan=3,sticky="NEWS")
+		# b = ttk.Button(ButtonFrame,text='Picture',underline=0,image=self.iconCameraBig,
+		# 	compound='left',command=lambda e=None:self.TakePicture(e),width=7)
+		# b.grid(row=0,column=0,sticky='W',padx=5)
+		# ToolTip(b, msg=9)
 
-		self.InCaptureVideo = False  # hack ----
-		self.TakeVideo = ttk.Button(ButtonFrame,text='Video',underline=0,
-			image=self.iconVideoBig,compound='left',
-			command=lambda e=None:self.ToggleVideo(e),width=7)
-		self.TakeVideo.grid(row=0,column=1,sticky='W')
-		ToolTip(self.TakeVideo, msg=10)
+		# self.InCaptureVideo = False  # hack ----
+		# self.TakeVideo = ttk.Button(ButtonFrame,text='Video',underline=0,
+		# 	image=self.iconVideoBig,compound='left',
+		# 	command=lambda e=None:self.ToggleVideo(e),width=7)
+		# self.TakeVideo.grid(row=0,column=1,sticky='W')
+		# ToolTip(self.TakeVideo, msg=10)
 
-		self.clearImage = ImageTk.PhotoImage(file='Assets/cancel_22x22.png')
-		b = ttk.Button(ButtonFrame,command=lambda e=None:self.ClearPicture(e),
-			image=self.clearImage,padding=(0,1,0,1))
-		b.grid(row=0,column=2,sticky='W',padx=5)
-		ToolTip(b, msg=11)
+		# self.clearImage = ImageTk.PhotoImage(file='Assets/cancel_22x22.png')
+		# b = ttk.Button(ButtonFrame,command=lambda e=None:self.ClearPicture(e),
+		# 	image=self.clearImage,padding=(0,1,0,1))
+		# b.grid(row=0,column=2,sticky='W',padx=5)
+		# ToolTip(b, msg=11)
 
-		image = PIL.Image.open('Assets/flip.png').resize((22,22))
-		self.FlipHorzImage = ImageTk.PhotoImage(image)
-		b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureH(e),
-			image=self.FlipHorzImage,padding=(0,1,0,1))
-		b.grid(row=0,column=3,sticky='W')
-		b.config(state='disabled')
-		ToolTip(b, msg=12)
+		# image = PIL.Image.open('Assets/flip.png').resize((22,22))
+		# self.FlipHorzImage = ImageTk.PhotoImage(image)
+		# b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureH(e),
+		# 	image=self.FlipHorzImage,padding=(0,1,0,1))
+		# b.grid(row=0,column=3,sticky='W')
+		# b.config(state='disabled')
+		# ToolTip(b, msg=12)
 
-		self.FlipVertImage = ImageTk.PhotoImage(image.rotate(90))
-		b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureV(e),
-			image=self.FlipVertImage,padding=(0,1,0,1))
-		b.grid(row=0,column=4,sticky='W',padx=5)
-		b.config(state='disabled')
-		ToolTip(b, msg=13)
+		# self.FlipVertImage = ImageTk.PhotoImage(image.rotate(90))
+		# b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureV(e),
+		# 	image=self.FlipVertImage,padding=(0,1,0,1))
+		# b.grid(row=0,column=4,sticky='W',padx=5)
+		# b.config(state='disabled')
+		# ToolTip(b, msg=13)
 
-		## TODO: Need to make a tooltip
-		self.WriteTimestamps = MyBooleanVar(True)
-		b = ttk.Checkbutton(ButtonFrame, text='Timestamps', variable=self.WriteTimestamps)
-		b.grid(row=0,column=5,sticky='W')
-		#b.config(state='disabled')
-		ToolTip(b, msg=15)
+		# ## TODO: Need to make a tooltip
+		# self.WriteTimestamps = MyBooleanVar(True)
+		# b = ttk.Checkbutton(ButtonFrame, text='Timestamps', variable=self.WriteTimestamps)
+		# b.grid(row=0,column=5,sticky='W')
+		# #b.config(state='disabled')
+		# ToolTip(b, msg=15)
 
 		self.pw.add(self.TopFrame)
 		self.pw.add(BottomFrame)

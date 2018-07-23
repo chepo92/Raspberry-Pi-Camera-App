@@ -232,12 +232,12 @@ class Exposure ( BasicNotepage ):
 		#self.FixedFrameRateBool = MyBooleanVar(True)
 		self.FixedFrameRate = MyStringVar('Fixed')
 		self.ffr = MyRadio(f,'Fixed frame rate:','Fixed',self.FixedFrameRate,
-			self.FixedFrameRateChecked,2,0,'W',tip=311)
+			self.FixedFrameRateChecked,3,0,'W',tip=311)
 		okCmd = (self.register(self.ValidateFixedRange),'%P')
 		self.FixedFramerateText = MyStringVar("15.0")
 		self.FixedFramerateEntry = Entry(f,width=6,validate='all',
 			validatecommand=okCmd,textvariable=self.FixedFramerateText)
-		self.FixedFramerateEntry.grid(row=2,column=1,sticky='W')
+		self.FixedFramerateEntry.grid(row=3,column=1,sticky='W')
 		ToolTip(self.FixedFramerateEntry,312)
 
 		MyRadio(f, 'Discrete frame rate:', 'Discrete', self.FixedFrameRate,
@@ -251,39 +251,45 @@ class Exposure ( BasicNotepage ):
 			MyRadio(f, '15fps', 15, self.FPSVar, self.FPSButton, 1, 3, 'W'),
 			MyRadio(f, '20fps', 20, self.FPSVar, self.FPSButton, 1, 4, 'W'),
 			MyRadio(f, '25fps', 25, self.FPSVar, self.FPSButton, 1, 5, 'W'),
-			MyRadio(f, '30fps', 30, self.FPSVar, self.FPSButton, 1, 6, 'W')
+			MyRadio(f, '30fps', 30, self.FPSVar, self.FPSButton, 1, 6, 'W'),
+                        MyRadio(f, '35fps', 35, self.FPSVar, self.FPSButton, 2, 1, 'W'),
+                        MyRadio(f, '40fps', 40, self.FPSVar, self.FPSButton, 2, 2, 'W'),
+                        MyRadio(f, '45fps', 45, self.FPSVar, self.FPSButton, 2, 3, 'W'),
+                        MyRadio(f, '50fps', 50, self.FPSVar, self.FPSButton, 2, 4, 'W'),
+                        MyRadio(f, '55fps', 55, self.FPSVar, self.FPSButton, 2, 5, 'W'),
+                        MyRadio(f, '60fps', 60, self.FPSVar, self.FPSButton, 2, 6, 'W'),
 		]
 
-		l = Label(f,text='FPS').grid(row=2,column=2,sticky='W')
+		l = Label(f,text='FPS').grid(row=3,column=2,sticky='W')
 		
-		Label(f,text='Delta:').grid(row=2,column=3,sticky='E',padx=(5,0))
+		Label(f,text='Delta:').grid(row=3,column=3,sticky='E',padx=(5,0))
 		okCmd = (self.register(self.ValidateFramerateDelta),'%P')
 		self.FramerateDeltaText = MyStringVar("0.0")
 		self.FramerateDelta = Entry(f,width=6,validate='all',
 			validatecommand=okCmd,textvariable=self.FramerateDeltaText)
-		self.FramerateDelta.grid(row=2,column=4,sticky='W')
+		self.FramerateDelta.grid(row=3,column=4,sticky='W')
 		ToolTip(self.FramerateDelta,315)
-		Label(f,text='FPS').grid(row=2,column=5,sticky='W')
+		Label(f,text='FPS').grid(row=3,column=5,sticky='W')
 
 		MyRadio(f,'Frame rate range:','Range',
 			self.FixedFrameRate,
-			self.FixedFrameRateChecked,3,0,'W',tip=313)
+			self.FixedFrameRateChecked,4,0,'W',tip=313)
 		#Label(f,text='Frame rate range:').grid(row=2,column=0,sticky='W')
 		ok1Cmd = (self.register(self.ValidateFramerateRangeFrom),'%P')
 		self.FramerateRangeFromText = MyStringVar("1/6")
 		self.FramerateFrom = Entry(f,width=6,validate='all',
 			textvariable=self.FramerateRangeFromText)
-		self.FramerateFrom.grid(row=3,column=1,sticky='W')
+		self.FramerateFrom.grid(row=4,column=1,sticky='W')
 		ToolTip(self.FramerateFrom,314)
-		Label(f,text='FPS').grid(row=3,column=2,sticky='W')
-		Label(f,text='To:').grid(row=3,column=3,sticky='E')
+		Label(f,text='FPS').grid(row=4,column=2,sticky='W')
+		Label(f,text='To:').grid(row=4,column=3,sticky='E')
 		self.FramerateRangeToText = MyStringVar("30.0")
 		ok2Cmd = (self.register(self.ValidateFramerateRangeTo),'%P')
 		self.FramerateTo = Entry(f,width=6,validate='all',
 			validatecommand=ok2Cmd,textvariable=self.FramerateRangeToText)
-		self.FramerateTo.grid(row=3,column=4,sticky='W')
+		self.FramerateTo.grid(row=4,column=4,sticky='W')
 		ToolTip(self.FramerateTo,316)
-		l = Label(f,text='FPS').grid(row=3,column=5,sticky='W')
+		l = Label(f,text='FPS').grid(row=4,column=5,sticky='W')
 
 		self.FramerateFrom.config(validatecommand=ok1Cmd)
 
