@@ -64,7 +64,7 @@ class Sleeping(State):
         self._time = time.time()
 
     def run(self):
-        print('Sleeping')
+        pass
 
     def next(self, input):
         if input == MouseState.moving:
