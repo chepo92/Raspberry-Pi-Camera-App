@@ -368,7 +368,7 @@ class VideoProcessing:
             self.cv_write_video(image)
             return
 
-        frame, box = self.sequential_frame_subtraction(image, 30, 1500)
+        frame, box = self.sequential_frame_subtraction(image, 8, 1500)
         #frame, box = self.background_frame_subtraction(image, 30, 1500)
         #frame, box = self.mog_subtraction(image, 30, 900)
         #frame, box = self.blob_detection(image, 900)
@@ -383,8 +383,9 @@ class VideoProcessing:
         #    image = self._tracker.track(image, box)
         self.write_tracking(box)
         #cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
-        #cv2.imshow('Image', image)
-        #cv2.waitKey(0)
+        cv2.imshow('Frame', frame)
+        cv2.imshow('Image', image)
+        cv2.waitKey(0)
         self.cv_write_video(image)
         self.last_box = box
 
