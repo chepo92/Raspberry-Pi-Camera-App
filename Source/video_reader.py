@@ -48,9 +48,10 @@ class PassFrame():
 
                 #print(frame.shape)
                 #buf = np.reshape(frame, -1, 'A').astype(np.uint8).tobytes()
-                cv2.imshow('Read', frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+                #cv2.imshow('Read', frame)
+                #cv2.waitKey(0)
+                #if cv2.waitKey(1) & 0xFF == ord('q'):
+                #    break
                 ret, buf = cv2.imencode('.png', frame)
                 Thread(target=self.sendFrame, kwargs={'buf': buf}).start()
                 time.sleep(1/self.camera.framerate)

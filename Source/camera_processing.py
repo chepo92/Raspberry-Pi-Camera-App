@@ -10,6 +10,7 @@
 
 from queue import Empty
 from queue import Queue
+from RPi import GPIO
 from threading import Event
 from threading import Thread
 
@@ -17,6 +18,7 @@ import io
 import cv2
 import os
 import random
+import time
 
 import numpy as np
 
@@ -242,6 +244,14 @@ class VideoProcessing:
         self.background_frame = None
         self.last_frame = None
         self.last_box = None
+        self.last_time = None
+        self.time_not_moving = 0
+        
+        self.pinout = 3
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.pinout, GPIO.OUT, initial=GPIO.LOW)
+        self.timeout = False
+        self.timeout_timer = 0
 
         # Object detection algorithm perameters
         self.blob_params = None
@@ -351,7 +361,7 @@ class VideoProcessing:
         Args:
             buf: A buffer representing the image.
         """
-
+        current_time = time.time()
         self._frame_number += 1
         if image is None:
             image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
@@ -368,7 +378,7 @@ class VideoProcessing:
             self.cv_write_video(image)
             return
 
-        frame, box = self.sequential_frame_subtraction(image, 8, 1500)
+        frame, box = self.sequential_frame_subtraction(image, 16, 1000)
         #frame, box = self.background_frame_subtraction(image, 30, 1500)
         #frame, box = self.mog_subtraction(image, 30, 900)
         #frame, box = self.blob_detection(image, 900)
@@ -381,13 +391,38 @@ class VideoProcessing:
         # If we detected something then hand it to the tracker
         #if box is not None:
         #    image = self._tracker.track(image, box)
+        if self.timeout is True:
+            self.timeout_timer -= (time.time() - self.last_time)
+            if self.timeout_timer <= 0:
+                self.timeout = False
+        elif self.time_not_moving >= 40:
+            self.timeout = True
+            self.timeout_timer = 120
+            GPIO.output(self.pinout, GPIO.LOW)
+
+        if box == self.last_box:
+            if self.last_time is None:
+                self.last_time = time.time()
+                
+            self.time_not_moving += time.time() - self.last_time
+            if self.time_not_moving >= 20 and self.timeout is False:
+                GPIO.output(self.pinout, GPIO.HIGH)
+                
+        else:
+            self.time_not_moving = 0
+            GPIO.output(self.pinout, GPIO.LOW)
+            
         self.write_tracking(box)
         #cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
-        cv2.imshow('Frame', frame)
-        cv2.imshow('Image', image)
-        cv2.waitKey(0)
+        cv2.imshow('Frame', frame.copy())
+        cv2.imshow('Image', image.copy())
+        #cv2.waitKey(0)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            return
+        
         self.cv_write_video(image)
         self.last_box = box
+        self.last_time = current_time
 
     def background_frame_subtraction(self, np_buffer, threshold, minimum_area):
         """Object detection using frame subtraction.
@@ -432,7 +467,7 @@ class VideoProcessing:
         return (frame, box)
 
     def sequential_frame_subtraction(self, np_buffer, threshold, minimum_area):
-        frame = cv2.GaussianBlur(np_buffer, (5, 5), 0)
+        frame = cv2.GaussianBlur(np_buffer, (3, 3), 0)
         #frame = cv2.pyrDown(np_buffer)
         
         if self.last_frame is None:
@@ -445,6 +480,7 @@ class VideoProcessing:
         #cv2.imshow('diff', frame)
         
         _, frame = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
+        frame = cv2.dilate(frame, np.ones((5, 5), np.uint8), iterations=1)        
         _, contours, _ = cv2.findContours(frame, cv2.RETR_LIST,
                                           cv2.CHAIN_APPROX_SIMPLE)
         
