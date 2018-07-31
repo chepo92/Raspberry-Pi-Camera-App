@@ -9,6 +9,8 @@
 """
 
 from RPi import GPIO
+from sleeping import MouseState
+from sleeping import SleepState
 
 import numpy as np
 
@@ -30,8 +32,7 @@ class VideoProperties:
            disk).
        color: True if the video is in color, False otherwise.
     """
-    __slots__ =
-    [
+    __slots__ = [
         'type',
         'height',
         'width',
@@ -77,26 +78,23 @@ class VideoProcessing:
         file_type: What type of encoding is used on the buffers that will be
         passed for decoding
     """
-    def __init__(self, properites, tracking=True, tracking_fps=1):
+    def __init__(self, properties, track=True, tracking_fps=1):
         #super(VideoProcessing, self).__init__()
         self._frame_number = 0
         
         self.video_properties = properties
-        self.tracking = tracking
+        self.track = track
         self.tracking_fps = tracking_fps
         self.last_frame = None
         self.last_box = None
-        self.last_time = None
-        self.time_not_moving = 0
         
-        self.timeout = False
-        self.timeout_timer = 0
         self.pinout = 3
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.pinout, GPIO.OUT, initial=GPIO.LOW)
 
         self.tracking_filename = self.filename + '.tracking.log'
         self.tracking_stream = io.open(self.tracking_filename, 'w')
+        self.video_writer = VideoWriter(properties)
 
     def process_frame(self, buf, image=None):
         """Decodes the buffer then manages the tracking.
@@ -104,13 +102,12 @@ class VideoProcessing:
         Args:
             buf: A buffer representing the image.
         """
-        current_time = time.time()
         self._frame_number += 1
         if image is None:
             image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
             image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
 
-        if self._frame_number % round(self.framerate/self.tracking_fps) != 0  or self.tracking is False:
+        if self._frame_number % round(self.framerate/self.tracking_fps) != 0  or self.track is False:
             self.write_tracking(self.last_box)
             self.cv_write_video(image)
             return
@@ -119,28 +116,18 @@ class VideoProcessing:
         if box is None:
             box = self.last_box
 
-        if self.timeout is True:
-            self.timeout_timer -= (time.time() - self.last_time)
-            if self.timeout_timer <= 0:
-                self.timeout = False
-        elif self.time_not_moving >= 40:
-            self.timeout = True
-            self.timeout_timer = 120
-            GPIO.output(self.pinout, GPIO.LOW)
-
         if box == self.last_box:
-            if self.last_time is None:
-                self.last_time = time.time()
-                
-            self.time_not_moving += time.time() - self.last_time
-            if self.time_not_moving >= 20 and self.timeout is False:
-                GPIO.output(self.pinout, GPIO.HIGH)
-                
+            self.sleeping_state.run(MouseState.moving)
         else:
-            self.time_not_moving = 0
-            GPIO.output(self.pinout, GPIO.LOW)
+            self.sleeping_state.run(MouseState.still)
             
-        self.write_tracking(box)
+        if sleeping_state.current_state == SleepState.sleeping:
+            self.write_tracking(box, sleeping=True)
+            GPIO.output(self.pinout, GPIO.HIGH)
+        else:
+            self.write_tracking(box)
+            GPIO.output(self.pinout, GPIO.LOW)
+        
         cv2.imshow('Frame', frame.copy())
         cv2.imshow('Image', image.copy())
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -148,7 +135,6 @@ class VideoProcessing:
         
         self.cv_write_video(image)
         self.last_box = box
-        self.last_time = current_time
 
     def sequential_frame_subtraction(self, np_buffer, threshold, minimum_area):
         frame = cv2.GaussianBlur(np_buffer, (3, 3), 0)        
@@ -221,11 +207,16 @@ class VideoProcessing:
         """
         self.video_writer.write(frame)
 
-    def write_tracking(self, box=None):
+    def write_tracking(self, box=None, sleeping=False):
+        sleep = 1 if sleeping is True else 0
         if box is None:
-            self.tracking_stream.write('-1,-1,-1,-1\n')
+            self.tracking_stream.write('-1,-1,-1,-1,{}\n'.format(sleep))
         else:
-            self.tracking_stream.write('{},{},{},{}\n'.format(box[0], box[1], box[2], box[3]))
+            self.tracking_stream.write('{},{},{},{},{}\n'.format(box[0],
+                                                                 box[1],
+                                                                 box[2],
+                                                                 box[3],
+                                                                 sleep))
 
 
     def flush(self):
@@ -268,10 +259,15 @@ class VideoHandler(object):
 
         self.frame_count = 0
         if self.tracking is True:
-            self.video = VideoProcessing(video_file, height=self.height,
-                                         width=self.width, framerate=self.framerate,
-                                         file_type=self.file_type,
-                                         tracking=self.tracking,
+            properties = VideoProperties()
+            properties.file_tpye = self.file_type
+            properties.height = self.height
+            properties.width = self.width
+            properties.framerate = self.framerate
+            properties.file_name = self.video_file
+            properties.color = False
+            
+            self.video = VideoProcessing(properties, tracking=self.tracking,
                                          tracking_fps=self.tracking_fps)
         else:
             self.video = io.open(video_file, 'wb')
@@ -290,7 +286,7 @@ class VideoHandler(object):
 
         Args:
             buf: A buffer of a newly aquired image.
-        """
+        """        
         if self.file_type == 'yuv':
             # The first portion of yuv is luminescence (grayscale)
             luminescence = np.frombuffer(buf, dtype=np.uint8,
