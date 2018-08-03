@@ -95,6 +95,7 @@ class VideoProcessing:
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.pinout, GPIO.OUT, initial=GPIO.LOW)
 
+        self.mp4_filename = properties.file_name
         self.tracking_filename = properties.file_name + '.tracking.log'
         self.tracking_stream = io.open(self.tracking_filename, 'w')
         self.video_writer = VideoWriter(properties)
@@ -186,7 +187,12 @@ class VideoProcessing:
         new_name = new_name.replace('&', '\&')
         new_name = new_name.replace('#', '\#')
         try:
+            print('hello')
+            print(new_name)
+            self.mp4_filename = '.'.join(self.mp4_filename.split('.')[:-1]) + '.mp4'
             new_mp4_name = '.'.join(new_name.split('.')[:-1]) + '.mp4'
+            print('world')
+            print('Replacing {} with {}'.format(self.mp4_filename, new_mp4_name))
             os.rename(self.mp4_filename, new_mp4_name)
             self.mp4_filename = new_mp4_name
             new_tracking_name = '.'.join(new_name.split('.')[:-1]) + '.tracking.log'
@@ -232,7 +238,7 @@ class VideoProcessing:
         print('Closing Stream')
         self.flush()
         self.video_writer.release()
-        self._event.set()
+        #self._event.set()
 
 
 
@@ -297,7 +303,12 @@ class VideoHandler(object):
             luminescence = np.frombuffer(buf, dtype=np.uint8,
                                          count=self.width*self.height)
             luminescence = np.resize(luminescence, (self.height, self.width))
-            self.video.write(buf=None, image=luminescence)
+
+            # Hotfix for writing without proccessing
+            try:
+                self.video.write(buf=None, image=luminescence)
+            except TypeError:
+                self.video.write(buf)
         else:
             self.video.write(buf)
             
