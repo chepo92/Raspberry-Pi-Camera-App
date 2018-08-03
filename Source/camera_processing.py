@@ -95,7 +95,6 @@ class VideoProcessing:
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.pinout, GPIO.OUT, initial=GPIO.LOW)
 
-        self.mp4_filename = properties.file_name
         self.tracking_filename = properties.file_name + '.tracking.log'
         self.tracking_stream = io.open(self.tracking_filename, 'w')
         self.video_writer = VideoWriter(properties)
@@ -126,17 +125,16 @@ class VideoProcessing:
             self.sleeping_state.run(MouseState.moving)
 
         if type(self.sleeping_state.current_state) is type(SleepState.sleeping):
-            print('Pin High')
             self.write_tracking(box, sleeping=True)
             GPIO.output(self.pinout, GPIO.HIGH)
         else:
             self.write_tracking(box)
             GPIO.output(self.pinout, GPIO.LOW)
         
-        cv2.imshow('Frame', frame.copy())
-        cv2.imshow('Image', image.copy())
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            return
+        #cv2.imshow('Frame', frame.copy())
+        #cv2.imshow('Image', image.copy())
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+        #    return
         
         self.cv_write_video(image)
         self.last_box = box
@@ -181,28 +179,29 @@ class VideoProcessing:
             yuv = True
         self.process_frame(buf=buf, image=image)
 
+    # TODO: Needs work
     def rename(self, new_name):
         """Changes the filename of the video"""
+        video_name = self.video_properties.file_name
         new_name = new_name.replace(':', '\:')
         new_name = new_name.replace('&', '\&')
         new_name = new_name.replace('#', '\#')
+        
         try:
-            print('hello')
-            print(new_name)
-            self.mp4_filename = '.'.join(self.mp4_filename.split('.')[:-1]) + '.mp4'
+            mp4_filename = '.'.join(self.video_properties.file_name.split('.')[:-1]) + '.mp4'
             new_mp4_name = '.'.join(new_name.split('.')[:-1]) + '.mp4'
-            print('world')
-            print('Replacing {} with {}'.format(self.mp4_filename, new_mp4_name))
-            os.rename(self.mp4_filename, new_mp4_name)
-            self.mp4_filename = new_mp4_name
+            print('Replacing {} with {}'.format(mp4_filename, new_mp4_name))
+            os.rename(mp4_filename, new_mp4_name)
+            mp4_filename = new_mp4_name
+
             new_tracking_name = '.'.join(new_name.split('.')[:-1]) + '.tracking.log'
             os.rename(self.tracking_filename, new_tracking_name)
             self.tracking_filename = new_tracking_name
         except:
             rand_num = str(random.randint(1, 1000000))
-            new_mp4_name = '/'.join(self.mp4_filename.split('/')[:-1]) + '/recovedVideo' + rand_num + '.mp4'
-            os.rename(self.mp4_filename, new_mp4_name)
-            self.mp4_filename = new_mp4_name
+            new_mp4_name = '/'.join(self.video_properties.file_name.split('/')[:-1]) + '/recovedVideo' + rand_num + '.mp4'
+            os.rename(self.video_properties.file_name, new_mp4_name)
+            self.video_properties.file_name = new_mp4_name
             
             new_tracking_name = '/'.join(new_name.split('/')[:-1]) + '/recovedVideo' + rand_num + '.tracking.log'
             os.rename(self.tracking_filename, new_tracking_name)
