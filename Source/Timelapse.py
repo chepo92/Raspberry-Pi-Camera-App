@@ -25,7 +25,12 @@ from time import sleep
 from 	Dialog import *
 from 	Mapping import *
 from	NotePage import *	
-from tkinter import filedialog
+import tkFileDialog as filedialog
+import os
+import sys
+from time import sleep
+import time
+import datetime
 
 class Timelapse ( BasicNotepage ):
 	def BuildPage ( self ):
@@ -189,14 +194,9 @@ class Timelapse ( BasicNotepage ):
                 self.Started= not self.Started
                 if self.Started:
                     self.StartButton.configure(text='Stop')
+                    self.LoopTimeLapse()
                 else:
                     self.StartButton.configure(text='Start')
-                self.camera.capture(str(self.Directory+self.BaseTxt.get()+self.ExtensionCombo.get()))
-                self.Started= not self.Started
-                if self.Started:
-                    self.StartButton.configure(text='Stop')
-                else:
-                    self.StartButton.configure(text='Start')                
 		pass  
 	def Clear ( self ):            
 		pass    
@@ -210,37 +210,38 @@ class Timelapse ( BasicNotepage ):
 	def Reset ( self ):
 		pass
 
-'''
+	def LoopTimeLapse ( self ):
+                steps=int(self.EndTxt.get())
+                folder=str(self.Directory)
+                filename=self.BaseTxt.get()
+                interval=int(self.DelayTxt.get())
+        # Run the timelapse loop
+                for i in range(steps):
+                    
+                    t1 = time.time()
+                    print('Cycle ' + str(i))
+                    
+                    #Side Light
+                    # turn the side LEDs on            
+                    os.system('python turnONs.py')
 
-		Label(f,text='Custom name').grid(row=1,column=0,sticky='E')
-		                
+                    datestr = datetime.datetime.now().strftime("%Y-%m-%d-%H_%M_%S")
+                    fname = os.path.join(folder, datestr + "_" + filename + "_%04d.png"%(i))
+                    self.camera.capture(fname, 'png')
+                    
+                    #turn the LEDs off
+                    os.system('python turnOFFs.py')
 
-                
-                self.Eexecute = Button(f,text='Ok',width=10,	command=self.ReadEntry)
-		self.Eexecute.grid(row=1,column=3,sticky='W')
+                    elapsed = time.time()-t1
 
-                self.Button2 = Button(f,text='Clear',width=10,	command=self.Clear)
-		self.Button2.grid(row=1,column=4,sticky='W')
-                
- 
- 		self.LowLightCaptureButton = Button(f,text='Low Light',width=15, \
-
-			command=self.CaptureLowLight)
-		self.LowLightCaptureButton.grid(row=3,column=0,sticky='W')
-		
-		self.StartDelayCaptureButton = Button(f,text='Delay Capture',width=15, \
-			command=self.StartDelayCapture)
-
-		self.StartDelayCaptureButton.grid(row=3,column=1,sticky='W')
-		
-		self.combo = Combobox(f)
-                self.combo['values']= (1, 2, 3, 4, 5, "Text")
- 
-                self.combo.current(1) #set the selected item
+                    # print some relevant information
+                    print('Elapsed cycle time: ' + str(elapsed))
+                    #e = self.camera.exposure_speed
+                    #print('Effective camera shutter speed :' + str(e) + '\n')
                  
-                self.combo.grid( row=4, column=0)
-
- '''
+                    sleep(interval-elapsed) ##  waiting time between cycles
+                    
+		pass
 
 
 
