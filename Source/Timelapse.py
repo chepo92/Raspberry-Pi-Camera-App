@@ -34,12 +34,17 @@ class Timelapse ( BasicNotepage ):
 		f.columnconfigure(4,weight=1)
 
 		Label(f,text='Default').grid(row=0,column=0,sticky='E')
+		txt = Entry(self,width=10)
+		txt.grid(column=0, row=0)
 		self.LowLightCaptureButton = Button(f,text='Low Light',width=15, \
 			command=self.CaptureLowLight)
 		self.LowLightCaptureButton.grid(row=1,column=0,sticky='W')
 		self.StartDelayCaptureButton = Button(f,text='Delay Capture',width=15, \
 			command=self.StartDelayCapture)
 		self.StartDelayCaptureButton.grid(row=2,column=0,sticky='W')
+		self.StartDelayCaptureButton = Button(f,text='Run',width=15, \
+			command=self.StartDelayCapture)
+		self.StartDelayCaptureButton.grid(row=2,column=1,sticky='W')
 
 	def CaptureLowLight ( self ):
 		self.camera.capture('foo.jpg')
