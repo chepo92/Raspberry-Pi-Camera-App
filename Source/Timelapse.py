@@ -28,21 +28,105 @@ from	NotePage import *
 
 class Timelapse ( BasicNotepage ):
 	def BuildPage ( self ):
-		f = ttk.LabelFrame(self,text='Time lapse settings',padding=(5,5,5,5))
-		f.grid(row=0,column=0,columnspan=4,sticky='NEWS',pady=5)
-		#f.columnconfigure(2,weight=1)
-		#f.columnconfigure(4,weight=1)
+		f = ttk.LabelFrame(self,text='Photo Time lapse settings')
+		f.grid(row=0,column=0,sticky='NEWS')
+		f.columnconfigure(1,weight=1)
 
-		Label(f,text='Default').grid(row=0,column=0,sticky='E')
 
+		#------------------- Type of time lapse --------------------
+		l = Label(f,text='Type:')
+		l.grid(row=0,column=0,sticky='W',pady=5)
+		self.TypeCombo = Combobox(f,state='readonly',width=20)
+		self.TypeCombo.grid(row=0,column=1,columnspan=3,sticky='W')
+		self.TypeCombo['values'] = ('Burst', 'Timed')
+		self.TypeCombo.current(0)
+		#self.TypeCombo.bind('<<ComboboxSelected>>',self.MeteringModeChanged)
+		#ToolTip(self.MeteringModeCombo,200)
 		
-		
-		
-		Label(f,text='Custom name').grid(row=1,column=0,sticky='E')
-		
+		#------------------- Use same Setting for all pictures --------------------
+		self.PersistSetting = True
+		self.PersistCheck = ttk.Checkbutton(f,text='Same image setting for all pictures',
+			variable=self.PersistSetting, command=self.Clear)
+		self.PersistCheck.grid(row=1,column=0,sticky='NW',pady=5, columnspan=2)
+		#ToolTip(self.PersistCheck,msg=102)	
+
+		#------------------- Use Video Port --------------------
+		self.UseVideo = False
+		self.UseVideoCheck = ttk.Checkbutton(f,text='Use vdeo port (faster)',
+			variable=self.UseVideo, command=self.Clear)
+		self.UseVideoCheck.grid(row=2,column=0,sticky='NW',pady=5, columnspan=2)
+		#ToolTip(self.UseVideoCheck,msg=102)			
+
+		#------------------- Start Schedule --------------------
+		l = Label(f,text='Start Schedule:')
+		l.grid(row=3,column=0,sticky='W',pady=5)
+
+		self.StartCombo = Combobox(f,state='readonly',width=20)
+		self.StartCombo.grid(row=3,column=1,columnspan=3,sticky='W')
+		self.StartCombo['values'] = ('Inmediately', 'Delay','Date')
+		self.StartCombo.current(0)
+		#self.StartCombo.bind('<<ComboboxSelected>>',self.MeteringModeChanged)
+		#ToolTip(self.StartCombo,200)
+                self.txt = Entry(f,width=20)
+                self.txt.grid(row=3, column=2,sticky='W')
+
+		#------------------- Delay between shots --------------------
+		l = Label(f,text='Delay between shots:')
+		l.grid(row=4,column=0,sticky='W',pady=5)
+
+		self.StartCombo = Combobox(f,state='readonly',width=20)
+		self.StartCombo.grid(row=4,column=1,columnspan=3,sticky='W')
+		self.StartCombo['values'] = ('Delay', 'On every','Every Day at')
+		self.StartCombo.current(0)
+		#self.StartCombo.bind('<<ComboboxSelected>>',self.MeteringModeChanged)
+		#ToolTip(self.StartCombo,200)
+                self.txt = Entry(f,width=20)
+                self.txt.grid(row=4, column=2,sticky='W')
+
+		#------------------- End Schedule --------------------
+		l = Label(f,text='End Schedule:')
+		l.grid(row=5,column=0,sticky='W',pady=5)
+
+		self.StartCombo = Combobox(f,state='readonly',width=20)
+		self.StartCombo.grid(row=5,column=1,columnspan=3,sticky='W')
+		self.StartCombo['values'] = ('After n Shots', 'After t Elapsed Time','Date')
+		self.StartCombo.current(0)
+		#self.StartCombo.bind('<<ComboboxSelected>>',self.MeteringModeChanged)
+		#ToolTip(self.StartCombo,200)
+                self.txt = Entry(f,width=20)
+                self.txt.grid(row=5, column=2,sticky='W')
+
+		#------------------- Filename --------------------
+		l = Label(f,text='Filename')
+		l.grid(row=6,column=0,sticky='W',pady=5)
+
+
+                self.txt = Entry(f,width=20)
+                self.txt.grid(row=6, column=1,sticky='W')                
                 
-                self.txt = Entry(f,width=10)
-                self.txt.grid(row=1, column=1)
+                
+	def CaptureLowLight ( self ):
+		self.camera.capture('foo.jpg')
+		pass
+	def ReadEntry ( self ):
+		self.res = "Welcome to " + self.txt.get()
+		pass
+	def Clear ( self ):            
+		pass    
+	def Clear ( self ):
+                self.combo.get()	
+		pass    	    
+	def StartDelayCapture ( self ):
+		pass
+	#### TODO: Implement Reset NEEDS LOTS OF WORK!!
+	def Reset ( self ):
+		pass
+
+'''
+
+		Label(f,text='Custom name').grid(row=1,column=0,sticky='E')
+		                
+
                 
                 self.Eexecute = Button(f,text='Ok',width=10,	command=self.ReadEntry)
 		self.Eexecute.grid(row=1,column=3,sticky='W')
@@ -68,24 +152,9 @@ class Timelapse ( BasicNotepage ):
                  
                 self.combo.grid( row=4, column=0)
 
- 
+ '''
 
-	def CaptureLowLight ( self ):
-		self.camera.capture('foo.jpg')
-		pass
-	def ReadEntry ( self ):
-		self.res = "Welcome to " + self.txt.get()
-		pass
-	def Clear ( self ):            
-		pass    
-	def Clear ( self ):
-                self.combo.get()	
-		pass    	    
-	def StartDelayCapture ( self ):
-		pass
-	#### TODO: Implement Reset NEEDS LOTS OF WORK!!
-	def Reset ( self ):
-		pass
+
 
 '''
 	What controls are needed for this page?
