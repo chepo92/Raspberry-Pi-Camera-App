@@ -35,14 +35,19 @@ class Timelapse ( BasicNotepage ):
 
 		Label(f,text='Default').grid(row=0,column=0,sticky='E')
 		
-		Label(f,text='Label Custom').grid(row=1,column=0,sticky='E')
+		
+		
+		Label(f,text='Custom name').grid(row=1,column=0,sticky='E')
 		
                 
-                txt = Entry(f,width=10)
-                txt.grid(row=1, column=1)
-                self.Eexecute = Button(f,text='Ok',width=10,	command=self.CaptureLowLight)
+                self.txt = Entry(f,width=10)
+                self.txt.grid(row=1, column=1)
+                
+                self.Eexecute = Button(f,text='Ok',width=10,	command=self.ReadEntry)
 		self.Eexecute.grid(row=1,column=3,sticky='W')
-		
+
+                self.Button2 = Button(f,text='Clear',width=10,	command=self.Clear)
+		self.Button2.grid(row=1,column=4,sticky='W')
                 
  
  		self.LowLightCaptureButton = Button(f,text='Low Light',width=15, \
@@ -52,11 +57,26 @@ class Timelapse ( BasicNotepage ):
 		self.StartDelayCaptureButton = Button(f,text='Delay Capture',width=15, \
 			command=self.StartDelayCapture)
 		self.StartDelayCaptureButton.grid(row=3,column=1,sticky='W')
+		
+		self.combo = Combobox(f)
+                self.combo['values']= (1, 2, 3, 4, 5, "Text")
+ 
+                self.combo.current(1) #set the selected item
+                 
+                self.combo.grid( row=4, column=0)
 
  
 	def CaptureLowLight ( self ):
 		self.camera.capture('foo.jpg')
 		pass
+	def ReadEntry ( self ):
+		self.res = "Welcome to " + self.txt.get()
+		pass
+	def Clear ( self ):            
+		pass    
+	def Clear ( self ):
+                self.combo.get()	
+		pass    	    
 	def StartDelayCapture ( self ):
 		pass
 	#### TODO: Implement Reset NEEDS LOTS OF WORK!!
