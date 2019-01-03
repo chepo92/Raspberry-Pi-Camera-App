@@ -164,12 +164,12 @@ class PiCameraApp ( Frame ):
 		self.BasicControlsFrame = BasicControls(n,camera)
 		self.ExposureFrame = Exposure(n,camera)
 		self.FinerControlFrame = FinerControl(n,camera)
-		#self.TimelapseFrame = Timelapse(n,camera)
+		self.TimelapseFrame = Timelapse(n,camera)
 
 		n.add(self.BasicControlsFrame ,text='Basic',underline=0)
 		n.add(self.ExposureFrame,text='Exposure',underline=0)
 		n.add(self.FinerControlFrame,text='Advanced',underline=0)
-		#n.add(self.TimelapseFrame,text='Time lapse',underline=0)
+		n.add(self.TimelapseFrame,text='Time lapse',underline=0)
 
 		self.FinerControlFrame.PassControlFrame(self.BasicControlsFrame)
 

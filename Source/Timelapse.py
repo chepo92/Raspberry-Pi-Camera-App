@@ -30,17 +30,30 @@ class Timelapse ( BasicNotepage ):
 	def BuildPage ( self ):
 		f = ttk.LabelFrame(self,text='Time lapse settings',padding=(5,5,5,5))
 		f.grid(row=0,column=0,columnspan=4,sticky='NEWS',pady=5)
-		f.columnconfigure(2,weight=1)
-		f.columnconfigure(4,weight=1)
+		#f.columnconfigure(2,weight=1)
+		#f.columnconfigure(4,weight=1)
 
 		Label(f,text='Default').grid(row=0,column=0,sticky='E')
-		self.LowLightCaptureButton = Button(f,text='Low Light',width=15, \
+		
+		Label(f,text='Label Custom').grid(row=1,column=0,sticky='E')
+		
+                
+                txt = Entry(f,width=10)
+                txt.grid(row=1, column=1)
+                self.Eexecute = Button(f,text='Ok',width=10,	command=self.CaptureLowLight)
+		self.Eexecute.grid(row=1,column=3,sticky='W')
+		
+                
+ 
+ 		self.LowLightCaptureButton = Button(f,text='Low Light',width=15, \
 			command=self.CaptureLowLight)
-		self.LowLightCaptureButton.grid(row=1,column=0,sticky='W')
+		self.LowLightCaptureButton.grid(row=3,column=0,sticky='W')
+		
 		self.StartDelayCaptureButton = Button(f,text='Delay Capture',width=15, \
 			command=self.StartDelayCapture)
-		self.StartDelayCaptureButton.grid(row=2,column=0,sticky='W')
+		self.StartDelayCaptureButton.grid(row=3,column=1,sticky='W')
 
+ 
 	def CaptureLowLight ( self ):
 		self.camera.capture('foo.jpg')
 		pass
