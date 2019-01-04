@@ -24,13 +24,16 @@
 from time import sleep
 from 	Dialog import *
 from 	Mapping import *
-from	NotePage import *
+from	NotePage import *	
+from tkinter import filedialog
 
 class Timelapse ( BasicNotepage ):
 	def BuildPage ( self ):
 		f = ttk.LabelFrame(self,text='Photo Time lapse settings')
 		f.grid(row=0,column=0,sticky='NEWS')
-		f.columnconfigure(1,weight=1)
+		f.columnconfigure(0,weight=1)
+		f.columnconfigure(1,weight=2)
+		f.columnconfigure(2,weight=2)
 
 
 		#------------------- Type of time lapse --------------------
@@ -46,14 +49,14 @@ class Timelapse ( BasicNotepage ):
 		#------------------- Use same Setting for all pictures --------------------
 		self.PersistSetting = True
 		self.PersistCheck = ttk.Checkbutton(f,text='Same image setting for all pictures',
-			variable=self.PersistSetting, command=self.Clear)
+			variable=self.PersistSetting, command=self.TogglePersistentSettings)
 		self.PersistCheck.grid(row=1,column=0,sticky='NW',pady=5, columnspan=2)
 		#ToolTip(self.PersistCheck,msg=102)	
 
 		#------------------- Use Video Port --------------------
 		self.UseVideo = False
-		self.UseVideoCheck = ttk.Checkbutton(f,text='Use vdeo port (faster)',
-			variable=self.UseVideo, command=self.Clear)
+		self.UseVideoCheck = ttk.Checkbutton(f,text='Use video port (faster)',
+			variable=self.UseVideo, command=self.ToggleUseVideoPort)
 		self.UseVideoCheck.grid(row=2,column=0,sticky='NW',pady=5, columnspan=2)
 		#ToolTip(self.UseVideoCheck,msg=102)			
 
@@ -61,61 +64,146 @@ class Timelapse ( BasicNotepage ):
 		l = Label(f,text='Start Schedule:')
 		l.grid(row=3,column=0,sticky='W',pady=5)
 
-		self.StartCombo = Combobox(f,state='readonly',width=20)
+		self.StartCombo = Combobox(f,state='readonly',width=10)
 		self.StartCombo.grid(row=3,column=1,columnspan=3,sticky='W')
 		self.StartCombo['values'] = ('Inmediately', 'Delay','Date')
 		self.StartCombo.current(0)
 		#self.StartCombo.bind('<<ComboboxSelected>>',self.MeteringModeChanged)
 		#ToolTip(self.StartCombo,200)
-                self.txt = Entry(f,width=20)
-                self.txt.grid(row=3, column=2,sticky='W')
+                self.StartTxt = Entry(f,width=10)
+                self.StartTxt.grid(row=3, column=2,sticky='W')
 
 		#------------------- Delay between shots --------------------
 		l = Label(f,text='Delay between shots:')
 		l.grid(row=4,column=0,sticky='W',pady=5)
 
-		self.StartCombo = Combobox(f,state='readonly',width=20)
-		self.StartCombo.grid(row=4,column=1,columnspan=3,sticky='W')
-		self.StartCombo['values'] = ('Delay', 'On every','Every Day at')
-		self.StartCombo.current(0)
+		self.DelayCombo = Combobox(f,state='readonly',width=20)
+		self.DelayCombo.grid(row=4,column=1,columnspan=3,sticky='W')
+		self.DelayCombo['values'] = ('Delay', 'On every','Every Day at')
+		self.DelayCombo.current(0)
 		#self.StartCombo.bind('<<ComboboxSelected>>',self.MeteringModeChanged)
 		#ToolTip(self.StartCombo,200)
-                self.txt = Entry(f,width=20)
-                self.txt.grid(row=4, column=2,sticky='W')
+                self.DelayTxt = Entry(f,width=10)
+                self.DelayTxt.grid(row=4, column=2,sticky='W')
 
 		#------------------- End Schedule --------------------
 		l = Label(f,text='End Schedule:')
 		l.grid(row=5,column=0,sticky='W',pady=5)
 
-		self.StartCombo = Combobox(f,state='readonly',width=20)
-		self.StartCombo.grid(row=5,column=1,columnspan=3,sticky='W')
-		self.StartCombo['values'] = ('After n Shots', 'After t Elapsed Time','Date')
-		self.StartCombo.current(0)
+		self.EndCombo = Combobox(f,state='readonly',width=20)
+		self.EndCombo.grid(row=5,column=1,columnspan=3,sticky='W')
+		self.EndCombo['values'] = ('After n Shots', 'After t Elapsed Time','Date')
+		self.EndCombo.current(0)
 		#self.StartCombo.bind('<<ComboboxSelected>>',self.MeteringModeChanged)
 		#ToolTip(self.StartCombo,200)
-                self.txt = Entry(f,width=20)
-                self.txt.grid(row=5, column=2,sticky='W')
-
-		#------------------- Filename --------------------
-		l = Label(f,text='Filename')
+                self.EndTxt = Entry(f,width=10)
+                self.EndTxt.grid(row=5, column=2,sticky='W')
+		
+		#------------------- Directory to save --------------------
+		l = Label(f,text='Path to save')
 		l.grid(row=6,column=0,sticky='W',pady=5)
+		self.Directory='./'	
+		self.DirectoryButton = Button(f,text='Select',width=10,	command=self.AskDirectoryToSave)
+		self.DirectoryButton.grid(row=6,column=2,sticky='W')	                            
+		self.DirectoryLbl = Label(f,text=str(self.Directory))
+		self.DirectoryLbl.grid(row=6,column=1,sticky='W',pady=5)			
+
+		#------------------- Base Filename --------------------
+		l = Label(f,text='Base FileName')
+		l.grid(row=7,column=0,sticky='W',pady=5)
+                self.BaseTxt = Entry(f,width=20)
+                self.BaseTxt.grid(row=7, column=1,sticky='W')                
+		self.BaseTxt.insert(0, "photo")
+		#------------------- Append to Filename --------------------
+		l = Label(f,text='Append to filename:')
+		l.grid(row=7+1,column=0,sticky='W',pady=5)
+
+		self.AppendCombo = Combobox(f,state='readonly',width=20)
+		self.AppendCombo.grid(row=7+1,column=1,columnspan=3,sticky='W')
+		self.AppendCombo['values'] = ('_nnn', '_Date_Time','_Date_Time_nnn')
+		self.AppendCombo.current(1)
+		#self.StartCombo.bind('<<ComboboxSelected>>',self.MeteringModeChanged)
+		#ToolTip(self.StartCombo,200)
+
+		#------------------- File Extension--------------------
+		l = Label(f,text='Extension:')
+		l.grid(row=7+1+1,column=0,sticky='W',pady=5)
+
+		self.ExtensionCombo = Combobox(f,state='readonly',width=20)
+		self.ExtensionCombo.grid(row=7+1+1,column=1,columnspan=3,sticky='W')
+		self.ExtensionCombo['values'] = ('.png','.jpg')
+		self.ExtensionCombo.current(0)
+		#self.StartCombo.bind('<<ComboboxSelected>>',self.MeteringModeChanged)
+		#ToolTip(self.StartCombo,200)
+                #------------------- Capture Scripts --------------------
+		f1 = ttk.LabelFrame(self,text='Scripts')
+		f1.grid(row=8+1,column=0,sticky='NEWS', pady=5)
+		
+                #------------------- Before Capture Script --------------------
+		self.BeforeFile='Nothing Selected'
+		l = Label(f1,text='Execute before each capture:')
+		l.grid(row=8,column=0,sticky='W',pady=5)			
+		self.BeforeFileButton = Button(f1,text='Select File',width=10,	command=self.OpenBeforeFileDialog)
+		self.BeforeFileButton.grid(row=8,column=1,sticky='W')	                            
+		self.BeforeFileLbl = Label(f1,text=str(self.BeforeFile))
+		self.BeforeFileLbl.grid(row=9,column=0,sticky='W',pady=5)	
+
+                #------------------- After Capture Script --------------------
+		self.AfterFile='Nothing Selected'
+		l = Label(f1,text='Execute after each capture:')
+		l.grid(row=10,column=0,sticky='W',pady=5)	    
+		self.AfterFileLbl = Label(f1,text=str(self.AfterFile))
+		self.AfterFileLbl.grid(row=11,column=0,sticky='W',pady=5)				
+		self.AfterFileButton = Button(f1,text='Select File',width=10,	command=self.OpenAfterFileDialog)
+		self.AfterFileButton.grid(row=10,column=1,sticky='W')	                            
 
 
-                self.txt = Entry(f,width=20)
-                self.txt.grid(row=6, column=1,sticky='W')                
-                
-                
+                #------------------- Start Button --------------------
+                self.Started=False
+                self.StartButton = Button(self,text='Start',width=10,	command=self.ToggleTL)
+		self.StartButton.grid(row=15,column=0,sticky='NEWS')                
+
+	def OpenBeforeFileDialog ( self ):
+		self.BeforeFile = filedialog.askopenfilename()
+		if self.BeforeFile is not None:
+                    self.BeforeFileLbl.configure(text=str(self.BeforeFile))
+		pass
+	def OpenAfterFileDialog ( self ):
+		self.AfterFile = filedialog.askopenfilename()
+		if self.AfterFile is not None:
+                    self.AfterFileLbl.configure(text=str(self.AfterFile))
+		pass
+	def AskDirectoryToSave ( self ):
+		self.Directory = filedialog.askdirectory()
+		if self.Directory is not None:
+                    self.DirectoryLbl.configure(text=str(self.Directory))
+		pass
+	    
 	def CaptureLowLight ( self ):
 		self.camera.capture('foo.jpg')
 		pass
 	def ReadEntry ( self ):
-		self.res = "Welcome to " + self.txt.get()
+		self.res = "Welcome to " + self.BaseTxt.get()
 		pass
+	def ToggleTL ( self ):
+                self.Started= not self.Started
+                if self.Started:
+                    self.StartButton.configure(text='Stop')
+                else:
+                    self.StartButton.configure(text='Start')
+                self.camera.capture(str(self.Directory+self.BaseTxt.get()+self.ExtensionCombo.get()))
+                self.Started= not self.Started
+                if self.Started:
+                    self.StartButton.configure(text='Stop')
+                else:
+                    self.StartButton.configure(text='Start')                
+		pass  
 	def Clear ( self ):            
 		pass    
-	def Clear ( self ):
-                self.combo.get()	
-		pass    	    
+	def TogglePersistentSettings ( self ):
+                pass
+	def ToggleUseVideoPort ( self ):
+                pass              
 	def StartDelayCapture ( self ):
 		pass
 	#### TODO: Implement Reset NEEDS LOTS OF WORK!!
