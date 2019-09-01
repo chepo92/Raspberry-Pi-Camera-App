@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 '''
@@ -49,7 +49,7 @@ library to Broadcom (BCM) mode with GPIO.setmode(GPIO.BCM) and disable
 warnings with GPIO.setwarnings(False). The LED cannot be controlled when
 the library is in BOARD mode.
 '''
-
+import os
 try:
 	import 	picamera
 	from 		picamera import *
@@ -106,6 +106,9 @@ from	Exposure import *
 from	Timelapse import *
 from	Utils import *
 
+wrkdir = os.path.dirname(__file__)
+
+
 #
 # Main PiCameraApp Window
 #
@@ -136,14 +139,14 @@ class PiCameraApp ( Frame ):
 		ToolTip.LoadToolTips()
 
 		#----------- Icons for Menu and Buttons ------------------------
-		self.iconClose = GetPhotoImage("Assets/window-close.png")
+		self.iconClose = GetPhotoImage(os.path.join(wrkdir,"Assets","window-close.png"))
 		#self.iconClose = ImageTk.PhotoImage(PIL.Image.open("Assets/window-close.png"))
-		self.iconPrefs = GetPhotoImage('Assets/prefs1_16x16.png')
-		self.iconWeb = GetPhotoImage('Assets/web_16x16.png')
-		image = PIL.Image.open('Assets/camera-icon.png')
+		self.iconPrefs = GetPhotoImage(os.path.join(wrkdir,"Assets","prefs1_16x16.png"))
+		self.iconWeb = GetPhotoImage(os.path.join(wrkdir,"Assets","web_16x16.png"))
+		image = PIL.Image.open(os.path.join(wrkdir,"Assets","camera-icon.png"))
 		self.iconCameraBig = GetPhotoImage(image.resize((22,22)))
 		self.iconCamera = GetPhotoImage(image.resize((16,16)))
-		image = PIL.Image.open('Assets/video-icon-b.png')
+		image = PIL.Image.open(os.path.join(wrkdir,"Assets","video-icon-b.png"))
 		self.iconVideoBig = GetPhotoImage(image.resize((22,22)))
 		self.iconVideo = GetPhotoImage(image.resize((16,16)))
 
@@ -229,7 +232,7 @@ class PiCameraApp ( Frame ):
 		ToolTip(self.alpha, msg=2)
 
 		self.VFlipState = False
-		image = PIL.Image.open('Assets/flip.png')
+		image = PIL.Image.open(os.path.join(wrkdir,"Assets","flip.png"))
 		image1 = image.rotate(90)
 		image1 = image1.resize((16,16))
 		self.flipVgif = ImageTk.PhotoImage(image1)
@@ -245,7 +248,7 @@ class PiCameraApp ( Frame ):
 		self.Hflip.grid(row=0,column=4)
 		ToolTip(self.Hflip, msg=4)
 
-		image = PIL.Image.open('Assets/rotate.png')
+		image = PIL.Image.open(os.path.join(wrkdir,"Assets","rotate.png"))
 		self.RotateImg = ImageTk.PhotoImage(image.resize((16,16)))
 		self.Rotate = ttk.Button(ButtonFrame,image=self.RotateImg,width=10,
 			command=self.RotateCamera,padding=(2,2,2,2))
@@ -370,13 +373,13 @@ class PiCameraApp ( Frame ):
 		self.TakeVideo.grid(row=0,column=1,sticky='W')
 		ToolTip(self.TakeVideo, msg=10)
 
-		self.clearImage = ImageTk.PhotoImage(file='Assets/cancel_22x22.png')
+		self.clearImage = ImageTk.PhotoImage(file=os.path.join(wrkdir,"Assets","cancel_22x22.png"))
 		b = ttk.Button(ButtonFrame,command=lambda e=None:self.ClearPicture(e),
 			image=self.clearImage,padding=(0,1,0,1))
 		b.grid(row=0,column=2,sticky='W',padx=5)
 		ToolTip(b, msg=11)
 
-		image = PIL.Image.open('Assets/flip.png').resize((22,22))
+		image = PIL.Image.open(os.path.join(wrkdir,"Assets","flip.png")).resize((22,22))
 		self.FlipHorzImage = ImageTk.PhotoImage(image)
 		b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureH(e),
 			image=self.FlipHorzImage,padding=(0,1,0,1))
@@ -1124,8 +1127,8 @@ def Run ():
 	win.mainloop()
 
 	camera.close()
+	x=input("end")
 
 if __name__ == '__main__':
 	print ( 'running....' )
 	Run()
-

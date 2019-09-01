@@ -24,6 +24,7 @@
 #  MA 02110-1301, USA.
 #
 #
+import os
 from time import time, localtime, strftime
 try:
 	from Tkinter import *
@@ -61,7 +62,9 @@ class ToolTip( Toplevel ):
 	TipLines = []				# All the tip text in lines
 	@staticmethod
 	def LoadToolTips ( ):	# Perhaps allow a reload of tips?
-		tipsFile = open("Assets/Tooltips.txt", "r")
+		wrkdirtips = os.path.dirname(__file__)
+		tipspath=os.path.join(wrkdirtips,"Assets","Tooltips.txt")
+		tipsFile = open(tipspath, "r")
 		if tipsFile:
 			ToolTip.TipLines = tipsFile.read().split('\n')
 			tipsFile.close()
