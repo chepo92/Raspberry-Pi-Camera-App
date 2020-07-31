@@ -40,7 +40,12 @@ except ImportError:
 	import	tkinter.font
 
 import PIL
-from PIL import Image, ImageTk, ExifTags
+from PIL import Image, ExifTags
+try:
+	from PIL import ImageTk
+except ImportError:
+	raise ("ImageTk not installed. If running Python 3.x\n" \
+			 "Use: sudo apt-get install python3-pil.imagetk")
 
 from Utils import UnderConstruction
 from Tooltip import *
