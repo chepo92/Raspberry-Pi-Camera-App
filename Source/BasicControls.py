@@ -24,7 +24,7 @@
 
 import os
 from   collections import OrderedDict
-import RPi.GPIO
+import RPi.GPIO as GPIO
 
 # If no RPi.GPIO, then disable the ability to toggle the camera LED
 RPiGPIO = True
@@ -183,16 +183,17 @@ class BasicControls ( BasicNotepage ):
 		self.Yzoom.grid(row=0,column=3,sticky='W',padx=5,pady=3)
 		self.Yzoom.set(0.0)
 		ToolTip(self.Yzoom,131)
-		Label(f4,text='Width:').grid(row=1,column=0,sticky='E')
-		self.Widthzoom = ttk.Scale(f4,from_=0.05,to=1.0,orient='horizontal')
-		self.Widthzoom.grid(row=1,column=1,sticky='W',padx=5,pady=3)
-		self.Widthzoom.set(1.0)
-		ToolTip(self.Widthzoom,132)
-		Label(f4,text='Height:').grid(row=1,column=2,sticky='E')
-		self.Heightzoom = ttk.Scale(f4,from_=0.05,to=1.0,orient='horizontal')
-		self.Heightzoom.grid(row=1,column=3,sticky='W',padx=5,pady=3)
-		self.Heightzoom.set(1.0)
-		ToolTip(self.Heightzoom,133)
+		
+		Label(f4,text='Factor:').grid(row=1,column=0,sticky='E')
+		self.Factorzoom = ttk.Scale(f4,from_=0.05,to=1.0,orient='horizontal')
+		self.Factorzoom.grid(row=1,column=1,sticky='W',padx=5,pady=3)
+		self.Factorzoom.set(1.0)
+		ToolTip(self.Factorzoom,132)
+		# Label(f4,text='Height:').grid(row=1,column=2,sticky='E')
+		# self.Heightzoom = ttk.Scale(f4,from_=0.05,to=1.0,orient='horizontal')
+		# self.Heightzoom.grid(row=1,column=3,sticky='W',padx=5,pady=3)
+		# self.Heightzoom.set(1.0)
+		# ToolTip(self.Heightzoom,133)
 		# WLW THIS IS A PROBLEM
 		image = PIL.Image.open('Assets/reset.png') #.resize((16,16))
 		self.resetImage = GetPhotoImage(image.resize((16,16)))
@@ -205,10 +206,10 @@ class BasicControls ( BasicNotepage ):
 			widget=self.Xzoom:self.Zoom(newval,widget))
 		self.Yzoom.config(command=lambda newval,
 			widget=self.Yzoom:self.Zoom(newval,widget))
-		self.Widthzoom.config(command=lambda newval,
-			widget=self.Widthzoom:self.Zoom(newval,widget))
-		self.Heightzoom.config(command=lambda newval,
-			widget=self.Heightzoom:self.Zoom(newval,widget))
+		self.Factorzoom.config(command=lambda newval,
+			widget=self.Factorzoom:self.Zoom(newval,widget))
+		# self.Heightzoom.config(command=lambda newval,
+			# widget=self.Heightzoom:self.Zoom(newval,widget))
 
 		Separator(f,orient=HORIZONTAL).grid(pady=5,row=5,column=0,
 			columnspan=3,sticky='EW')
@@ -318,6 +319,9 @@ class BasicControls ( BasicNotepage ):
 			variable=self.LedOn, command=self.LedOnChecked)
 		self.LedButton.grid(row=0,column=0,sticky='NW',pady=5, columnspan=2)
 		ToolTip(self.LedButton,msg=102)
+		
+		### MY CONSTANT LED
+		
 		Label(f,text='Flash Mode:').grid(row=1,column=0,sticky='W')
 		b = MyStringVar('off')
 		self.FlashModeOffRadio = MyRadio(f,'Off (Default)','off',b,
@@ -337,7 +341,20 @@ class BasicControls ( BasicNotepage ):
 		self.FlashModeCombo.config(state='disabled')
 		ToolTip(self.FlashModeCombo,183)
 
+		Label(f,text='Illumination:').grid(row=2,column=0,sticky='E')
+		self.IllumOn = MyBooleanVar(True)
+		self.IllumButton = ttk.Checkbutton(f,text='On',
+			variable=self.IllumOn, command=self.IllumOnChecked)
+		self.IllumButton.grid(row=2,column=1,sticky='NW',pady=5, columnspan=1)
+		self.IllumBrightness = ttk.Scale(f,from_=0.0,to=100.0,orient='horizontal')
+		self.IllumBrightness.grid(row=2,column=2,sticky='W',padx=5,pady=3,columnspan=3)
+		self.IllumBrightness.set(100.0)
+		self.IllumBrightness.config(command=lambda newval,
+			widget=self.IllumBrightness:self.IllumLevel(newval,widget))
+
 		self.FixedResolutionChanged(None)
+
+
 
 	def Reset ( self ):
 		# Use widget.invoke() to simulate a button/radiobutton press
@@ -421,18 +438,18 @@ class BasicControls ( BasicNotepage ):
 		self.cb1.config(state=states[not useFixedRes])
 	def Zoom ( self, newVal, scale ):
 		self.camera.zoom = (float(self.Xzoom.get()),float(self.Yzoom.get()),
-			float(self.Widthzoom.get()),float(self.Heightzoom.get()))
+			float(self.Factorzoom.get()),float(self.Factorzoom.get()))
 		scale.focus_set()
 	def SetZoom ( self, x, y, w, h ):
 		self.Xzoom.set(x)
 		self.Yzoom.set(y)
-		self.Widthzoom.set(w)
-		self.Heightzoom.set(h)
+		self.Factorzoom.set(w)
+		# self.Factorzoom.set(h)
 	def ZoomReset ( self ):
 		self.Xzoom.set(0.0)
 		self.Yzoom.set(0.0)
-		self.Widthzoom.set(1.0)
-		self.Heightzoom.set(1.0)
+		self.Factorzoom.set(1.0)
+		# self.Heightzoom.set(1.0)
 	def AllowImageResizeAfter ( self, allowResizeAfter ):
 		if allowResizeAfter:
 			state = 'readonly'
@@ -489,3 +506,16 @@ class BasicControls ( BasicNotepage ):
 	def FlashModeChanged ( self, event ):
 		self.camera.flash_mode = self.FlashModeCombo.get()
 
+	def IllumOnChecked ( self ):
+		self.setIllum( self.IllumOn.get(), self.IllumBrightness.get())
+	def IllumLevel ( self, newVal, scale ):
+		self.setIllum( self.IllumOn.get(), self.IllumBrightness.get())
+	def setIllum (self, on, bright):
+		brightness = self.IllumBrightness.get()
+		if (not on):
+			self.data.setBrightness(0)
+		else:
+			self.data.setBrightness(brightness)
+	
+		
+		

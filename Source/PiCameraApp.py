@@ -36,6 +36,7 @@ import os
 from time import time, sleep
 from Tooltip	import *
 from	AnnotationOverlay	import *
+from PwmLed import *
 
 #~ try:
 import RPi.GPIO
@@ -113,7 +114,7 @@ class PiCameraApp ( Frame ):
 	# Some statics used elsewhere
 	ExposureModeText = None
 
-	def __init__(self, root, camera, title):
+	def __init__(self, root, camera, pwmled, title):
 		Frame.__init__(self, root)
 
 		self.grid(padx=5,pady=5)
@@ -123,7 +124,9 @@ class PiCameraApp ( Frame ):
 
 		self.camera = camera
 		self.camera.start_preview(fullscreen=False,window=(0,0,10,10))
-
+		
+		self.pwmled = pwmled
+		
 		self.title = title
 		self.root.title(title)
 
@@ -160,7 +163,7 @@ class PiCameraApp ( Frame ):
 		n.columnconfigure(0,weight=1)
 		n.enable_traversal()
 
-		self.BasicControlsFrame = BasicControls(n,camera)
+		self.BasicControlsFrame = BasicControls(n,camera,data=pwmled)
 		self.ExposureFrame = Exposure(n,camera)
 		self.FinerControlFrame = FinerControl(n,camera)
 		#self.TimelapseFrame = Timelapse(n,camera)
@@ -1114,13 +1117,14 @@ def Run ():
 		# allow changing to other modes later...
 		camera = picamera.PiCamera(sensor_mode=1)
 		camera.sensor_mode = 0	# go back to auto mode
+		pwmled = PwmLed(18, invert=True)
 	except PiCameraError:
 		print ( "Error creating PiCamera instance! Shutting down.\n\nPress any key..." )
 		raw_input()
 		return
 
 	win.minsize(1024,768)
-	app = PiCameraApp(win,camera,title="PiCamera")
+	app = PiCameraApp(win,camera,pwmled,title="PiCamera")
 	win.mainloop()
 
 	camera.close()
