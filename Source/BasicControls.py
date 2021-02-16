@@ -42,8 +42,8 @@ from PIL import Image, ImageTk, ExifTags
 
 from 	Dialog			import *
 from 	Mapping			import *
-from	NotePage			import *
-from	Utils				import *
+from	NotePage		import *
+from	Utils			import *
 from	VideoParams		import *
 from	PhotoParams		import *
 from	ImageEffects	import *
@@ -96,6 +96,7 @@ class BasicControls ( BasicNotepage ):
 			self.FixedResolutionChanged)
 		self.FixedResolutionsCombo.grid(row=0,column=1,columnspan=3,sticky='W')
 		ToolTip(self.FixedResolutionsCombo,121)
+		
 		#------------ Capture Width and Height ----------------
 		# OrderedDict is used to ensure the keys stay in the same order as
 		# entered. I want the combobox to display in this order
@@ -355,10 +356,13 @@ class BasicControls ( BasicNotepage ):
 		self.effects.current(0)
 		self.UseRadio.focus_set()
 		self.FlashModeOffRadio.invoke()
+
 	def UseVideoPort ( self , val):
 		pass #self.camera.use_video_port = val
+
 	def LedOnChecked ( self ):
 		self.camera.led = self.LedOn.get()
+
 	def SetupLabelCombo ( self, parent, textname, rownum, colnum,
 								minto, maxto, callback, cameraVal, label=''):
 		l = Label(parent,text=textname)
@@ -373,40 +377,52 @@ class BasicControls ( BasicNotepage ):
 		scale.set(val)		# this would attempt to call any callback
 		scale.config(command=callback)	# now supply the callback
 		return label, scale, val
+
 	def UpdateMe( self, newVal, label ):
 		val = int(float(newVal))
 		label.config(text='%d' % val,
 			foreground='red' if val < 0 else 'blue' if val > 0 else 'black' )
 		return val
+
 	def CameraBrightnessChanged ( self, newVal ):
 		self.brightness.focus_set()
+
 		self.camera.brightness = self.UpdateMe(newVal,self.brightLabel)
+
 	def ContrastChanged ( self, newVal ):
 		self.contrast.focus_set()
 		self.camera.contrast = self.UpdateMe(newVal,self.contrastLabel)
+
 	def SaturationChanged ( self, newVal ):
 		self.saturation.focus_set()
 		self.camera.saturation = self.UpdateMe(newVal,self.saturationLabel)
+
 	def SharpnessChanged ( self, newVal ):
 		self.sharpness.focus_set()
 		self.camera.sharpness = self.UpdateMe(newVal,self.sharpnessLabel)
+
 	def ResetGeneralSliders ( self ):
 		self.brightness.set(50)
 		self.contrast.set(0)
 		self.saturation.set(0)
 		self.sharpness.set(0)
 		#self.ResetGeneralButton.focus_set()
+
 	def UpdateWidthHeightLabels ( self ):
 		res = self.camera.resolution # in case a different default value
 		self.WidthLabel.config(text='%d' % int(res[0]))
 		self.HeightLabel.config(text='%d' % int(res[1]))
+
 	def ResolutionChanged(self,event):
 		self.camera.resolution = (int(self.cb.get()),int(self.cb1.get()))
+
 		self.UpdateWidthHeightLabels()
+
 	def FixedResolutionChanged ( self, event ):
 		key = self.FixedResolutionsCombo.get().split(':')[0]
 		self.camera.resolution = self.StandardResolutions[key]
 		self.UpdateWidthHeightLabels()
+
 	def UseFixedResRadios ( self ):
 		states = {False:'disabled', True:'readonly'}
 		useFixedRes = self.UseFixedResolutions.get()
@@ -419,20 +435,24 @@ class BasicControls ( BasicNotepage ):
 		self.FixedResolutionsCombo.config(state=states[useFixedRes])
 		self.cb.config(state=states[not useFixedRes])
 		self.cb1.config(state=states[not useFixedRes])
+
 	def Zoom ( self, newVal, scale ):
 		self.camera.zoom = (float(self.Xzoom.get()),float(self.Yzoom.get()),
 			float(self.Widthzoom.get()),float(self.Heightzoom.get()))
 		scale.focus_set()
+
 	def SetZoom ( self, x, y, w, h ):
 		self.Xzoom.set(x)
 		self.Yzoom.set(y)
 		self.Widthzoom.set(w)
 		self.Heightzoom.set(h)
+
 	def ZoomReset ( self ):
 		self.Xzoom.set(0.0)
 		self.Yzoom.set(0.0)
 		self.Widthzoom.set(1.0)
 		self.Heightzoom.set(1.0)
+
 	def AllowImageResizeAfter ( self, allowResizeAfter ):
 		if allowResizeAfter:
 			state = 'readonly'
@@ -443,11 +463,14 @@ class BasicControls ( BasicNotepage ):
 			state = 'disabled'
 		self.resizeWidthAfterCombo.config(state=state)
 		self.resizeHeightAfterCombo.config(state=state)
+
 	def ResizeAfterChanged ( self, event ):
 		self.resizeAfter = ( int(self.resizeWidthAfterCombo.get()),
 									int(self.resizeHeightAfterCombo.get()) )
+
 	def GetResizeAfter ( self ):
 		return self.resizeAfter
+
 	def EffectsChecked ( self, EffectsEnabled ):
 		if EffectsEnabled == True:
 			self.effects.config(state='readonly')
@@ -457,6 +480,7 @@ class BasicControls ( BasicNotepage ):
 			self.effects.config(state='disabled')
 			self.ModParams.config(state='disabled')
 			self.camera.image_effect = 'none'
+
 	def EffectsChanged ( self, event ):
 		self.camera.image_effect = self.effects.get()
 		if self.camera.image_effect in ['solarize', 'colorpoint',
@@ -469,15 +493,20 @@ class BasicControls ( BasicNotepage ):
 					Effects1Page.EffectParam[self.camera.image_effect]
 		else:
 			self.ModParams.config(state='disabled')
+
 	def ModifyEffectsParamsPressed ( self ):
 		ImageEffectsDialog(self,title='Image Effects Parameters',
 			camera=self.camera,okonly=False)
+
 	def ImageDenoiseChecked ( self ):
 		self.camera.image_denoise = self.ImageDenoise.get()
+
 	def VideoDenoiseChecked ( self ):
 		self.camera.video_denoise = self.VideoDenoise.get()
+
 	def VideoStabChecked ( self ):
 		self.camera.video_stabilization = self.VideoStab.get()
+
 	def FlashModeButton ( self, FlashMode ):
 		if FlashMode == 'set':
 			self.FlashModeCombo.config(state='readonly')
@@ -486,6 +515,6 @@ class BasicControls ( BasicNotepage ):
 		else:
 			self.FlashModeCombo.config(state='disabled')
 			self.camera.flash_mode = FlashMode
+
 	def FlashModeChanged ( self, event ):
 		self.camera.flash_mode = self.FlashModeCombo.get()
-

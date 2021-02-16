@@ -2,6 +2,23 @@
 # -*- coding: utf-8 -*-
 
 '''
+This program has been modified for use with MicroscoPy under the 
+terms of the published by the Free Software Foundation.
+
+Thank you to Bill Williams for building the framework for the
+original Graphical User Interface, I hope the comments and
+modications I have made as part of my final year MEng project
+are useful!
+
+I have learnt Python and TKinter practically from scratch, and have
+no extensive previous programming knowledge, in a short few weeks for
+this project so apologies if my PEP 8 standards are not up to par.
+
+Benjamin Hutchings
+University of Birmingham, UK.
+'''
+
+'''
 PiCameraApp.py
 Copyright (C) 2015 - Bill Williams
 
@@ -17,38 +34,24 @@ GNU General Public License for more details.
 '''
 
 '''
-	1.)	LED control no longer works on RPI 3 Model B
-		The camera LED cannot currently be controlled when the module is
-		attached to a Raspberry Pi 3 Model B as the GPIO that controls the
-		LED has moved to a GPIO expander not directly accessible to the
-		ARM processor.
-	2.)
+-------------Import Standard Python Library Modules------------------
 '''
 
-########### TODO: Standardize variable, class, member cases
+import	time
+import	datetime
+import 	webbrowser
+import 	io
+import 	time
+import 	os
+from 	time 				import time, sleep
+from 	Tooltip				import *
+from 	AnnotationOverlay	import *
 
-import time
-import datetime
-import webbrowser		# display the Picamera documentation
-import io
-import time
-import os
-from time import time, sleep
-from Tooltip	import *
-from	AnnotationOverlay	import *
 
-#~ try:
-import RPi.GPIO
-#~ except ImportError:
-	#~ RPiGPIO = False
-'''
-From PiCamera ver 1.3 documentation
-https://picamera.readthedocs.io/en/release-1.13/recipes1.html
-Be aware when you first use the LED property it will set the GPIO
-library to Broadcom (BCM) mode with GPIO.setmode(GPIO.BCM) and disable
-warnings with GPIO.setwarnings(False). The LED cannot be controlled when
-the library is in BOARD mode.
-'''
+# #~ try:
+# import RPi.GPIO
+# #~ except ImportError:
+# 	#~ RPiGPIO = False
 
 try:
 	import 	picamera
@@ -56,15 +59,14 @@ try:
 	import 	picamera.array
 except ImportError:
 	raise ImportError("You do not seem to have picamera installed")
-
 try:
 	from Tkinter import *	# Python 2.X
 except ImportError:
 	from tkinter import *	# Python 3.X
 try:
-	from 		tkColorChooser import askcolor
+	from tkColorChooser import askcolor
 except ImportError:
-	from		tkinter.colorchooser import askcolor
+	from tkinter.colorchooser import askcolor
 try:
 	import 	tkFileDialog as FileDialog
 except ImportError:
@@ -83,7 +85,6 @@ try:
 	import 	tkFont
 except ImportError:
 	import	tkinter.font
-
 # sudo apt-get install python3-pil.imagetk
 import PIL
 from PIL import Image, ExifTags
@@ -93,27 +94,42 @@ except ImportError:
 	raise ("ImageTk not installed. If running Python 3.x\n" \
 			 "Use: sudo apt-get install python3-pil.imagetk")
 
-from 	AboutDialog import *
-from 	PreferencesDialog import *
-from	AnnotationOverlay import *
-from	KeyboardShortcuts import *
-from	Mapping import *
-from	NotePage import *
-from	CameraUtils import *
-from	BasicControls import *
-from	FinerControl import *
-from	Exposure import *
-from	Timelapse import *
-from	Utils import *
 
-#
-# Main PiCameraApp Window
-#
+
+
+'''
+------------------Import Classes from Custom Librarys------------------
+'''
+
+# Original Classes
+from 	AboutDialog 		import *
+from 	PreferencesDialog 	import *
+from	AnnotationOverlay 	import *
+from	KeyboardShortcuts	import *
+from	Mapping 			import *
+from	NotePage 			import *
+from	CameraUtils 		import *
+from	BasicControls 		import *
+from	FinerControl		import *
+from	Exposure			import *
+from	Timelapse 			import *
+from	Utils 				import *
+
+# MicroscoPy 2.0 Packages
+from	MotorControls		import *
+from	Livestream 			import *
+from	PositionalTracking	import *
+
+
+'''
+----------------------Main PiCameraApp Window------------------------
+'''
 class PiCameraApp ( Frame ):
 	# Some statics used elsewhere
 	ExposureModeText = None
 
 	def __init__(self, root, camera, title):
+		# Creates a Frame for the Main Window
 		Frame.__init__(self, root)
 
 		self.grid(padx=5,pady=5)
@@ -121,6 +137,7 @@ class PiCameraApp ( Frame ):
 
 		self.ControlMapping = ControlMapping()
 
+		# Starts Camera Preview
 		self.camera = camera
 		self.camera.start_preview(fullscreen=False,window=(0,0,10,10))
 
@@ -135,7 +152,8 @@ class PiCameraApp ( Frame ):
 
 		ToolTip.LoadToolTips()
 
-		#----------- Icons for Menu and Buttons ------------------------
+		'''-------------- Icons for Menu and Buttons -------------------'''
+
 		self.iconClose = GetPhotoImage("Assets/window-close.png")
 		#self.iconClose = ImageTk.PhotoImage(PIL.Image.open("Assets/window-close.png"))
 		self.iconPrefs = GetPhotoImage('Assets/prefs1_16x16.png')
@@ -146,8 +164,8 @@ class PiCameraApp ( Frame ):
 		image = PIL.Image.open('Assets/video-icon-b.png')
 		self.iconVideoBig = GetPhotoImage(image.resize((22,22)))
 		self.iconVideo = GetPhotoImage(image.resize((16,16)))
-
-		#------------ Notebook with all camera control pages -----------
+  
+		'''-------------- Notebook with all control pages -------------'''
 		frame1 = ttk.Frame(master,padding=(5,5,5,5))
 		frame1.grid(row=0,column=0,sticky="NSEW")
 		frame1.rowconfigure(2,weight=1)
@@ -160,36 +178,28 @@ class PiCameraApp ( Frame ):
 		n.columnconfigure(0,weight=1)
 		n.enable_traversal()
 
-		self.BasicControlsFrame = BasicControls(n,camera)
-		self.ExposureFrame = Exposure(n,camera)
-		self.FinerControlFrame = FinerControl(n,camera)
-		#self.TimelapseFrame = Timelapse(n,camera)
+		# Calls Notebook Pages from external classes
+		# PiCamera Classes
+		self.BasicControlsFrame = 		BasicControls(n,camera)
+		self.ExposureFrame = 			Exposure(n,camera)
+		self.FinerControlFrame =		FinerControl(n,camera)
+		# MicroscoPy  Classes
+		self.TimelapseFrame = 			Timelapse(n,camera) # Unfinished
+		self.MotorControlsFrame = 		MotorControls(n,camera) # Unfinished
+		self.LivestreamFrame = 			Livestream(n,camera) # Unfinished
+		self.PositonalTrackingFrame = 	PositionalTracking(n,camera) # Unfinished
 
-		n.add(self.BasicControlsFrame ,text='Basic',underline=0)
-		n.add(self.ExposureFrame,text='Exposure',underline=0)
-		n.add(self.FinerControlFrame,text='Advanced',underline=0)
-		#n.add(self.TimelapseFrame,text='Time lapse',underline=0)
+		n.add(self.BasicControlsFrame ,			text='Basic',				underline=0)
+		n.add(self.ExposureFrame,				text='Exposure',			underline=0)
+		n.add(self.FinerControlFrame,			text='Advanced',			underline=0)
+		n.add(self.TimelapseFrame,				text='Time lapse',			underline=0)
+
+		n.add(self.MotorControlsFrame,			text='Motor Positioning',	underline=0)
+		n.add(self.LivestreamFrame,				text='Livestream',			underline=0)
+		n.add(self.PositonalTrackingFrame,		text='Object Tracking',		underline=0)
+		
 
 		self.FinerControlFrame.PassControlFrame(self.BasicControlsFrame)
-
-		# ----------------------Paned Window ---------------------------
-		# Start of Image Canvas preview, camera captures,
-		#	Paned Window VERTICAL
-		#		TopFrame
-		#			Preview ImageCanvas	row Weight=1
-		#			ButtonFrame
-		#				Preview Buttons
-		#		BottomFrame
-		#### TODO:	Add title to BottomFrame 'Captured Image/Video'
-		#			PanedWindow HORIZONTAL row 0, col 0
-		#				LeftFrame
-		#					Camera setups, EXIF Text
-		#### TODO:			ButtonFrame
-		#### TODO:				Clear, Save as File, Save as Python
-		#				RightFrame
-		#					Current Photo Canvas
-		#			ButtonFrame
-		#				Picture / Video buttons
 
 		self.pw = ttk.PanedWindow(master,orient=VERTICAL,style='TPanedwindow',
 			takefocus=True)
@@ -202,15 +212,14 @@ class PiCameraApp ( Frame ):
 		self.TopFrame.rowconfigure(0,weight=1)
 		self.TopFrame.columnconfigure(1,weight=1)
 
-		#### TODO: Create Canvas Class to handle generic cursors, etc
 		self.ImageCanvas = Canvas(self.TopFrame,width=256,height=256,
 			background=self.ControlMapping.FocusColor,cursor='diamond_cross')
 		self.ImageCanvas.grid(row=0,column=0,columnspan=2,sticky="NEWS")
 		self.ImageCanvas.itemconfigure('nopreview',state='hidden')
-		self.ImageCanvas.bind("<Motion>",self.CanvasMouseMove)
-		self.ImageCanvas.bind("<ButtonPress>",self.CanvasMouseMove)
-		self.ImageCanvas.bind("<Enter>",self.CanvasEnterLeave)
-		self.ImageCanvas.bind("<Leave>",self.CanvasEnterLeave)
+		self.ImageCanvas.bind("<Motion>",		self.CanvasMouseMove)
+		self.ImageCanvas.bind("<ButtonPress>",	self.CanvasMouseMove)
+		self.ImageCanvas.bind("<Enter>",		self.CanvasEnterLeave)
+		self.ImageCanvas.bind("<Leave>",		self.CanvasEnterLeave)
 
 		ButtonFrame = ttk.Frame(self.TopFrame,padding=(5,5,5,5),relief=SUNKEN)
 		ButtonFrame.grid(row=1,column=0,columnspan=2,sticky="NEWS")
@@ -329,13 +338,13 @@ class PiCameraApp ( Frame ):
 		self.photoCanvas.create_text(0,0,
 			fill='red',tags=('text','objs'),anchor='nw')
 
-		self.photoCanvas.bind('<Configure>',self.PhotoCanvasResize)
-		self.photoCanvas.bind("<ButtonPress-1>",self.photoCanvasScrollStart)
-		self.photoCanvas.bind("<B1-Motion>",self.photoCanvasScrollMove)
-		self.photoCanvas.bind("<Motion>",self.photoCanvasMove)
-		self.photoCanvas.bind("<ButtonRelease-1>",self.photoCanvasButtonUp)
-		self.photoCanvas.bind("<Enter>",self.photoCanvasEnterLeave)
-		self.photoCanvas.bind("<Leave>",self.photoCanvasEnterLeave)
+		self.photoCanvas.bind('<Configure>',		self.PhotoCanvasResize)
+		self.photoCanvas.bind("<ButtonPress-1>",	self.photoCanvasScrollStart)
+		self.photoCanvas.bind("<B1-Motion>",		self.photoCanvasScrollMove)
+		self.photoCanvas.bind("<Motion>",			self.photoCanvasMove)
+		self.photoCanvas.bind("<ButtonRelease-1>",	self.photoCanvasButtonUp)
+		self.photoCanvas.bind("<Enter>",			self.photoCanvasEnterLeave)
+		self.photoCanvas.bind("<Leave>",			self.photoCanvasEnterLeave)
 		self.InPhotoZoom = False 	# hack -
 		# self.PhotoState = 'none', 'picture', 'zoom', 'video' ???
 
@@ -564,14 +573,17 @@ class PiCameraApp ( Frame ):
 		root.protocol("WM_DELETE_WINDOW", lambda e=None:self.quitProgram(e))
 
 		self.UpdateAnnotationText()
+
 	def ResetCameraSetups ( self, event ):
 		if MessageBox.askyesno("PiCamera", \
 										 "Reset camera settings to default values?"):
 			self.BasicControlsFrame.Reset()
 			self.ExposureFrame.Reset()
 			self.FinerControlFrame.Reset()
+
 	def SaveCameraSetups ( self, val ):
 		pass
+
 	def ShowHideImageAttributesPane ( self, ShowIt):
 		if ShowIt:
 			if self.CurrentImage: self.photoPanedWindow.insert(0,self.LeftFrame)
@@ -579,15 +591,18 @@ class PiCameraApp ( Frame ):
 			try:
 				self.photoPanedWindow.forget(self.LeftFrame)
 			except TclError: pass	# Already forgotten!
+
 	def ViewImageCursor ( self, event ):
 		if self.viewImageCursor.get() is True:
 			self.photoCanvas.itemconfigure('cursors',state='normal')
 		else:
 			self.photoCanvas.itemconfigure('cursors',state='hidden')
+
 	def ViewImageAttributesPane ( self, event ):
 		if not event == 'Menu':	# Must change variable state ourselves
 			self.viewImageAttributesPane.set(not self.viewImageAttributesPane.get())
 		self.ShowHideImageAttributesPane(self.viewImageAttributesPane.get())
+
 	def ViewPreviewPane ( self, event ):
 		if not event == 'Menu':	# Must change variable state ourselves
 			self.viewPreviewPane.set(not self.viewPreviewPane.get())
@@ -601,8 +616,10 @@ class PiCameraApp ( Frame ):
 			self.pw.insert(0,self.TopFrame)
 		else:
 			self.pw.forget(self.TopFrame)
+
 	def TextboxResize ( self, event ):
 		pass #print event.width
+
 	def SavePictureorVideo ( self, event ):
 		#### TODO: Create a picture class that maintains the state of
 		# the current image. This would include the state of the camera
@@ -638,6 +655,7 @@ class PiCameraApp ( Frame ):
 					# What options are available from PILLOW?
 					self.CurrentImage.save(path)
 					print ("Not JPEG save")
+
 	def photoCanvasScrollStart ( self, event ):
 		if self.CurrentImage:
 			if event.state & 0x0004 == 0x0004:		# Ctrl key
@@ -650,11 +668,13 @@ class PiCameraApp ( Frame ):
 			else:
 				#self.photoCanvas.config(cursor='hand1')
 				self.photoCanvas.scan_mark(event.x,event.y)
+
 	def photoCanvasScrollMove ( self, event ):
 		if self.CurrentImage:
 			if not self.InPhotoZoom:
 				self.photoCanvas.scan_dragto(event.x,event.y,gain=3)
 			self.photoCanvasMove(event)
+
 	def photoCanvasButtonUp ( self, event ):
 		self.photoCanvas.config(cursor='diamond_cross')
 		if self.InPhotoZoom:
@@ -671,6 +691,7 @@ class PiCameraApp ( Frame ):
 			#self.photoCanvas.config(scrollregion=(int(coords[0]),
 				#int(coords[1]),int(coords[2]),int(coords[3])))
 			self.photoCanvas.delete("zoom")
+
 	def photoCanvasMove ( self, event ):
 		if not self.CurrentImage: return
 
@@ -708,6 +729,7 @@ class PiCameraApp ( Frame ):
 				y1 = coords[1]
 				y2 = y
 			self.photoCanvas.coords('zoom',x1,y1,x2,y2)
+
 	def WheelScrollPhotoCanvas ( self, event ):
 		if event.state & 0x0004 == 0x0004:		# Ctrl key
 			if not self.CurrentImage: return
@@ -717,6 +739,7 @@ class PiCameraApp ( Frame ):
 			else:
 				self.photoZoomScale *= (1.0/1.1)
 			self.LoadImageFromStream(self.photoZoomScale)
+
 	def TakePicture ( self, event ):
 		if self.InCaptureVideo: return
 
@@ -733,6 +756,7 @@ class PiCameraApp ( Frame ):
 		self.photoCanvas.itemconfigure('capture',state='normal')
 		self.photoCanvas.itemconfigure('capture',text='Capture in progress...')
 		self.after(500,self.CapturePicture(photoFormat))
+
 	def CapturePicture ( self, photoFormat ):
 		try:
 			if photoFormat == 'jpeg':  #'/home/pi/Pictures/Image.jpeg'
@@ -752,6 +776,7 @@ class PiCameraApp ( Frame ):
 		self.LoadImageFromStream ( 1.0 )
 		self.photoCanvas.itemconfigure('objs',state='normal')
 		self.photoCanvas.tag_raise("objs") # raise Z order to topmost
+
 	def LoadImageFromStream ( self, zoom ):
 		if self.photo: del self.photo
 
@@ -836,12 +861,14 @@ class PiCameraApp ( Frame ):
 			else:
 				try:		os.remove(self.TempFile)
 				except:	pass
+
 	def UpdateCaptureInProgress ( self ):
 		if not self.InCaptureVideo: return
 		# keep updating video capture time
 		delta = time() - self.time
 		self.photoCanvas.itemconfigure('capture',text='Recording %.2f sec'%delta)
 		self.after(50,self.UpdateCaptureInProgress)	# call again
+
 	def ClearPicture ( self, event ):
 		self.ShowHideImageAttributesPane(False)
 		self.CameraUtils.ClearTextBox()
@@ -854,16 +881,20 @@ class PiCameraApp ( Frame ):
 		self.photoCanvas.itemconfigure('cross',state='normal')
 		self.photoCanvas.itemconfigure('objs',state='hidden')
 		self.photoCanvas.config(scrollregion=(0,0,1,1))
+
 	def FlipPictureH ( self, event ):
 		if self.CurrentImage:
 			pass
 			#self.CurrentImage.transpose(ImageTk.FLIP_LEFT_RIGHT)
+
 	def FlipPictureV ( self, event ):
 		if self.CurrentImage:
 			pass
 			#self.CurrentImage.transpose(ImageTk.FLIP_TOP_BOTTOM)
+
 	def ViewProperties ( self, event ):
 		pass
+
 	def PhotoCanvasResize ( self, event ):
 		size = (event.width,event.height)
 		x = self.photoCanvas.canvasx(event.x)
@@ -889,6 +920,7 @@ class PiCameraApp ( Frame ):
 		self.photoCanvas.coords('cross1',0,0,0+size[0],0+size[1])
 		self.photoCanvas.coords('cross2',0+size[0],0,0,0+size[1])
 		self.photoCanvas.coords('capture',0+size[0]/2,0+size[1]/2)
+
 	def photoCanvasEnterLeave ( self, event ):
 		self.XYText.set('X:   Y:')
 		if not self.CurrentImage: return
@@ -900,6 +932,7 @@ class PiCameraApp ( Frame ):
 			self.photoCanvas.itemconfigure('objs',state=state1)
 		else:
 			self.photoCanvas.itemconfigure('objs',state='hidden')
+
 	def CanvasMouseMove ( self, event ):
 		res = self.camera.resolution
 		canvas = self.CanvasSize
@@ -913,6 +946,7 @@ class PiCameraApp ( Frame ):
 
 		#self.statusText.set('%d X: %d Y: W: %d H: %d' % \
 			#(event.x,event.y,canvas[2],canvas[3]))
+
 	def CanvasEnterLeave ( self, event ):
 		pass
 	def SetPreviewOn ( self ):
@@ -945,25 +979,32 @@ class PiCameraApp ( Frame ):
 		self.WindowSize.state(['disabled'] \
 			if not ( self.PreviewOn.get() and self.ShowOnScreen.get() ) \
 			else ['!disabled'])
+
 	def AlphaChanged(self, newVal):
 		val = int(float(newVal))
 		self.camera.preview.alpha = val
 		self.alpha.focus_set()
+
 	def ToggleHFlip ( self ):
 		self.HFlipState = not self.HFlipState
 		#self.camera.preview.hflip = not self.camera.preview.hflip
 		self.camera.hflip = not self.camera.hflip
+
 	def ToggleVFlip ( self ):
 		self.VFlipState = not self.VFlipState
 		self.camera.vflip = not self.camera.vflip
 		#self.camera.preview.vflip = not self.camera.preview.vflip
+
 	def RotateCamera ( self ):
 		r = (self.camera.rotation + 90) % 360
 		self.camera.rotation = r
+
 	def SetPreviewLocation ( self ):
 		self.SetPreviewOn();
+
 	def WindowSizeChanged ( self, newVal ):
 		self.SetPreviewOn();
+
 	def LoseFocus ( self, event ):
 		'''
 							The Combobox is a problem.
@@ -1041,18 +1082,22 @@ class PiCameraApp ( Frame ):
 			else:					text = text + " (" + t + ")"
 		self.camera.annotate_text = text
 		self.after(1000,self.UpdateAnnotationText)
+
 	def SystemPreferences ( self, event ):
 		PreferencesDialog(self,title='PiCamera Preferences',camera=self.camera,
 			minwidth=400,minheight=550,okonly=False)
 		self.ControlMapping.SetControlMapping()
+
 	def AnnotationOverlay ( self, event ):
 		AnnotationOverlayDialog(self,title='Annotation / Overlay',
 			camera=self.camera,okonly=False)
+
 	def ViewStatusBar ( self, event ):
 		if self.ViewStatusBarBoolean.get() is True:
 			self.StatusBarFrame.grid()
 		else:
 			self.StatusBarFrame.grid_remove()
+			
 	def KeyboardShortcuts ( self, event ):
 		KeyboardShortcutsDialog(self,title='Keyboard shortcuts', \
 			resizable=True,minwidth=400,minheight=300) # minwidth does not work by itself, minwidth=300)
