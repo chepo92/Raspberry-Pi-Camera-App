@@ -105,6 +105,8 @@ is influenced, but not directly set, by the selection. (C) $
 132 : Adjust the new width of the zoomed area of the preview image. $
 133 : Adjust the new height of the zoomed area of the preview image. $
 134 : Reset back to full size on the preview image. $
+135 : Enable/Disable Autofocus of Camera. $
+136 : Enter zoom value from 0 to 1000. $
 
 # Resize after
 140 : Do not resize image after capture. $
