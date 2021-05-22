@@ -1,5 +1,5 @@
 '''
-camera_processing.py
+camera_processing.new.py
 Copyright (C) 2018 - Zachary Selk
 
 This program is free software: you can redistribute it and/or modify
@@ -71,15 +71,14 @@ class VideoWriter(cv2.VideoWriter):
     """
     def __init__(self, properties, write_type='mp4', fourcc=0x00000021):
         # Changes the file type to write_type
-        file_name = '.'.join(properties.file_name.split('.')[:-1]) + '.' +\
-                    write_type
+        file_name = properties.file_name.split('.')[:-1] + '.' + write_type
         if len(file_name) is 0:
             file_name = properties.file_name + '.' + write_type
         resolution = (properties.width, properties.height)
         
-        cv2.VideoWriter.__init__(self, file_name, fourcc,
-                                 properties.framerate,
-                                 resolution, properties.color)
+        super(cv2.VideoWriter, self).__init__(file_name, fourcc,
+                                              properties.framerate,
+                                              resolution, properties.color)
 
 class VideoProcessing:
     """Handles video processing
@@ -103,14 +102,12 @@ class VideoProcessing:
         self.tracking_fps = tracking_fps
         self.last_frame = None
         self.last_box = None
-        self.framerate = properties.framerate
-        self.sleeping_state = SleepState()
         
-        self.pinout = 38
+        self.pinout = 3
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.pinout, GPIO.OUT, initial=GPIO.LOW)
 
-        self.tracking_filename = properties.file_name + '.tracking.log'
+        self.tracking_filename = self.filename + '.tracking.log'
         self.tracking_stream = io.open(self.tracking_filename, 'w')
         self.video_writer = VideoWriter(properties)
 
@@ -135,21 +132,21 @@ class VideoProcessing:
             box = self.last_box
 
         if box == self.last_box:
-            self.sleeping_state.run(MouseState.still)
-        else:
             self.sleeping_state.run(MouseState.moving)
-
-        if type(self.sleeping_state.current_state) is type(SleepState.sleeping):
+        else:
+            self.sleeping_state.run(MouseState.still)
+            
+        if sleeping_state.current_state == SleepState.sleeping:
             self.write_tracking(box, sleeping=True)
             GPIO.output(self.pinout, GPIO.HIGH)
         else:
             self.write_tracking(box)
             GPIO.output(self.pinout, GPIO.LOW)
         
-        #cv2.imshow('Frame', frame.copy())
-        #cv2.imshow('Image', image.copy())
-        #if cv2.waitKey(1) & 0xFF == ord('q'):
-        #    return
+        cv2.imshow('Frame', frame.copy())
+        cv2.imshow('Image', image.copy())
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            return
         
         self.cv_write_video(image)
         self.last_box = box
@@ -194,28 +191,23 @@ class VideoProcessing:
             yuv = True
         self.process_frame(buf=buf, image=image)
 
-    # TODO: Needs work
     def rename(self, new_name):
         """Changes the filename of the video"""
-        video_name = self.video_properties.file_name
         new_name = new_name.replace(':', '\:')
         new_name = new_name.replace('&', '\&')
         new_name = new_name.replace('#', '\#')
-        
         try:
-            mp4_filename = '.'.join(self.video_properties.file_name.split('.')[:-1]) + '.mp4'
             new_mp4_name = '.'.join(new_name.split('.')[:-1]) + '.mp4'
-            os.rename(mp4_filename, new_mp4_name)
-            mp4_filename = new_mp4_name
-
+            os.rename(self.mp4_filename, new_mp4_name)
+            self.mp4_filename = new_mp4_name
             new_tracking_name = '.'.join(new_name.split('.')[:-1]) + '.tracking.log'
             os.rename(self.tracking_filename, new_tracking_name)
             self.tracking_filename = new_tracking_name
         except:
             rand_num = str(random.randint(1, 1000000))
-            new_mp4_name = '/'.join(self.video_properties.file_name.split('/')[:-1]) + '/recovedVideo' + rand_num + '.mp4'
-            os.rename(self.video_properties.file_name, new_mp4_name)
-            self.video_properties.file_name = new_mp4_name
+            new_mp4_name = '/'.join(self.mp4_filename.split('/')[:-1]) + '/recovedVideo' + rand_num + '.mp4'
+            os.rename(self.mp4_filename, new_mp4_name)
+            self.mp4_filename = new_mp4_name
             
             new_tracking_name = '/'.join(new_name.split('/')[:-1]) + '/recovedVideo' + rand_num + '.tracking.log'
             os.rename(self.tracking_filename, new_tracking_name)
@@ -247,11 +239,10 @@ class VideoProcessing:
     
     def close(self):
         """Closes the video stream and the worker queue"""
-        GPIO.cleanup()
         print('Closing Stream')
         self.flush()
         self.video_writer.release()
-        #self._event.set()
+        self._event.set()
 
 
 
@@ -284,14 +275,14 @@ class VideoHandler(object):
         self.frame_count = 0
         if self.tracking is True:
             properties = VideoProperties()
-            properties.type = self.file_type
+            properties.file_tpye = self.file_type
             properties.height = self.height
             properties.width = self.width
             properties.framerate = self.framerate
             properties.file_name = self.video_file
             properties.color = False
             
-            self.video = VideoProcessing(properties, track=self.tracking,
+            self.video = VideoProcessing(properties, tracking=self.tracking,
                                          tracking_fps=self.tracking_fps)
         else:
             self.video = io.open(video_file, 'wb')
@@ -316,12 +307,7 @@ class VideoHandler(object):
             luminescence = np.frombuffer(buf, dtype=np.uint8,
                                          count=self.width*self.height)
             luminescence = np.resize(luminescence, (self.height, self.width))
-
-            # Hotfix for writing without proccessing
-            try:
-                self.video.write(buf=None, image=luminescence)
-            except TypeError:
-                self.video.write(buf)
+            self.video.write(buf=None, image=luminescence)
         else:
             self.video.write(buf)
             

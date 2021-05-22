@@ -51,9 +51,9 @@ the library is in BOARD mode.
 '''
 
 try:
-	import 	picamera
-	from 		picamera import *
-	import 	picamera.array
+	import	picamera
+	from		picamera import *
+	import	picamera.array
 except ImportError:
 	raise ImportError("You do not seem to have picamera installed")
 
@@ -62,25 +62,25 @@ try:
 except ImportError:
 	from tkinter import *	# Python 3.X
 try:
-	from 		tkColorChooser import askcolor
+	from		tkColorChooser import askcolor
 except ImportError:
 	from		tkinter.colorchooser import askcolor
 try:
-	import 	tkFileDialog as FileDialog
+	import	tkFileDialog as FileDialog
 except ImportError:
 	import	tkinter.filedialog as FileDialog
 try:
-	import 	tkMessageBox as MessageBox
+	import	tkMessageBox as MessageBox
 except ImportError:
 	import	tkinter.messagebox as MessageBox
 try:
-	import 	ttk
-	from 		ttk import *
+	import	ttk
+	from		ttk import *
 except ImportError:
 	from		tkinter import ttk
-	from 		tkinter.ttk import *
+	from		tkinter.ttk import *
 try:
-	import 	tkFont
+	import	tkFont
 except ImportError:
 	import	tkinter.font
 
@@ -93,8 +93,8 @@ except ImportError:
 	raise ("ImageTk not installed. If running Python 3.x\n" \
 			 "Use: sudo apt-get install python3-pil.imagetk")
 
-from 	AboutDialog import *
-from 	PreferencesDialog import *
+from	AboutDialog import *
+from	PreferencesDialog import *
 from	AnnotationOverlay import *
 from	KeyboardShortcuts import *
 from	Mapping import *
@@ -105,7 +105,7 @@ from	FinerControl import *
 from	Exposure import *
 from	Timelapse import *
 from	Utils import *
-from    camera_processing import VideoHandler
+from	camera_processing import VideoHandler
 
 #
 # Main PiCameraApp Window
@@ -269,6 +269,63 @@ class PiCameraApp ( Frame ):
 		self.WindowSize.set(255)
 		ToolTip(self.WindowSize, msg=6)
 
+		self.ComputeTracking = MyBooleanVar(True)
+		b = ttk.Checkbutton(ButtonFrame, text='Tracking', variable=self.ComputeTracking,
+				    command=self.ToggleTracking)
+		b.grid(row=1, column=0, padx=5, sticky='W')
+		
+		self.ComputeFPSVar = MyIntVar(1)
+		self.DiscreteComputeFPS = [
+			MyRadio(ButtonFrame, '1fps', 1, self.ComputeFPSVar, None, 1, 1, 'W'),
+			MyRadio(ButtonFrame, '2fps', 2, self.ComputeFPSVar, None, 1, 2, 'W'),
+			MyRadio(ButtonFrame, '3fps', 3, self.ComputeFPSVar, None, 1, 3, 'W'),
+			MyRadio(ButtonFrame, '4fps', 4, self.ComputeFPSVar, None, 1, 4, 'W'),
+			MyRadio(ButtonFrame, '5fps', 5, self.ComputeFPSVar, None, 1, 5, 'W')
+		]
+
+		
+		b = ttk.Button(ButtonFrame,text='Picture',underline=0,image=self.iconCameraBig,
+			compound='left',command=lambda e=None:self.TakePicture(e),width=7)
+		b.grid(row=2,column=0,sticky='W',padx=5)
+		ToolTip(b, msg=9)		 
+		
+		self.InCaptureVideo = False  # hack ----
+		self.TakeVideo = ttk.Button(ButtonFrame,text='Video',underline=0,
+			image=self.iconVideoBig,compound='left',
+			command=lambda e=None:self.ToggleVideo(e),width=7)
+		self.TakeVideo.grid(row=2,column=1,sticky='W')
+		ToolTip(self.TakeVideo, msg=10)
+
+		self.clearImage = ImageTk.PhotoImage(file='Assets/cancel_22x22.png')
+		b = ttk.Button(ButtonFrame,command=lambda e=None:self.ClearPicture(e),
+			image=self.clearImage,padding=(0,1,0,1))
+		b.grid(row=2,column=2,sticky='W',padx=5)
+		ToolTip(b, msg=11)
+
+		image = PIL.Image.open('Assets/flip.png').resize((22,22))
+		self.FlipHorzImage = ImageTk.PhotoImage(image)
+		b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureH(e),
+			image=self.FlipHorzImage,padding=(0,1,0,1))
+		b.grid(row=2,column=3,sticky='W')
+		b.config(state='disabled')
+		ToolTip(b, msg=12)
+
+		self.FlipVertImage = ImageTk.PhotoImage(image.rotate(90))
+		b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureV(e),
+			image=self.FlipVertImage,padding=(0,1,0,1))
+		b.grid(row=2,column=4,sticky='W',padx=5)
+		b.config(state='disabled')
+		ToolTip(b, msg=13)
+
+		## TODO: Need to make a tooltip
+		self.WriteTimestamps = MyBooleanVar(True)
+		b = ttk.Checkbutton(ButtonFrame, text='Timestamps', variable=self.WriteTimestamps)
+		b.grid(row=2,column=5,sticky='W')
+		#b.config(state='disabled')
+		ToolTip(b, msg=15)
+
+
+		
 		#------------------ Photo / Video Section ----------------------
 		self.pictureStream = io.BytesIO()
 
@@ -338,7 +395,7 @@ class PiCameraApp ( Frame ):
 		self.photoCanvas.bind("<ButtonRelease-1>",self.photoCanvasButtonUp)
 		self.photoCanvas.bind("<Enter>",self.photoCanvasEnterLeave)
 		self.photoCanvas.bind("<Leave>",self.photoCanvasEnterLeave)
-		self.InPhotoZoom = False 	# hack -
+		self.InPhotoZoom = False	# hack -
 		# self.PhotoState = 'none', 'picture', 'zoom', 'video' ???
 
 		vsbar = Scrollbar(RightFrame,orient=VERTICAL)
@@ -358,47 +415,47 @@ class PiCameraApp ( Frame ):
 		self.photoPanedWindow.add(RightFrame)
 		self.photoPanedWindow.forget(self.LeftFrame)
 
-		ButtonFrame = ttk.Frame(BottomFrame,padding=(5,5,5,5))
-		ButtonFrame.grid(row=1,column=0,columnspan=3,sticky="NEWS")
-		b = ttk.Button(ButtonFrame,text='Picture',underline=0,image=self.iconCameraBig,
-			compound='left',command=lambda e=None:self.TakePicture(e),width=7)
-		b.grid(row=0,column=0,sticky='W',padx=5)
-		ToolTip(b, msg=9)
+		# ButtonFrame = ttk.Frame(BottomFrame,padding=(5,5,5,5))
+		# ButtonFrame.grid(row=1,column=0,columnspan=3,sticky="NEWS")
+		# b = ttk.Button(ButtonFrame,text='Picture',underline=0,image=self.iconCameraBig,
+		# 	compound='left',command=lambda e=None:self.TakePicture(e),width=7)
+		# b.grid(row=0,column=0,sticky='W',padx=5)
+		# ToolTip(b, msg=9)
 
-		self.InCaptureVideo = False  # hack ----
-		self.TakeVideo = ttk.Button(ButtonFrame,text='Video',underline=0,
-			image=self.iconVideoBig,compound='left',
-			command=lambda e=None:self.ToggleVideo(e),width=7)
-		self.TakeVideo.grid(row=0,column=1,sticky='W')
-		ToolTip(self.TakeVideo, msg=10)
+		# self.InCaptureVideo = False  # hack ----
+		# self.TakeVideo = ttk.Button(ButtonFrame,text='Video',underline=0,
+		# 	image=self.iconVideoBig,compound='left',
+		# 	command=lambda e=None:self.ToggleVideo(e),width=7)
+		# self.TakeVideo.grid(row=0,column=1,sticky='W')
+		# ToolTip(self.TakeVideo, msg=10)
 
-		self.clearImage = ImageTk.PhotoImage(file='Assets/cancel_22x22.png')
-		b = ttk.Button(ButtonFrame,command=lambda e=None:self.ClearPicture(e),
-			image=self.clearImage,padding=(0,1,0,1))
-		b.grid(row=0,column=2,sticky='W',padx=5)
-		ToolTip(b, msg=11)
+		# self.clearImage = ImageTk.PhotoImage(file='Assets/cancel_22x22.png')
+		# b = ttk.Button(ButtonFrame,command=lambda e=None:self.ClearPicture(e),
+		# 	image=self.clearImage,padding=(0,1,0,1))
+		# b.grid(row=0,column=2,sticky='W',padx=5)
+		# ToolTip(b, msg=11)
 
-		image = PIL.Image.open('Assets/flip.png').resize((22,22))
-		self.FlipHorzImage = ImageTk.PhotoImage(image)
-		b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureH(e),
-			image=self.FlipHorzImage,padding=(0,1,0,1))
-		b.grid(row=0,column=3,sticky='W')
-		b.config(state='disabled')
-		ToolTip(b, msg=12)
+		# image = PIL.Image.open('Assets/flip.png').resize((22,22))
+		# self.FlipHorzImage = ImageTk.PhotoImage(image)
+		# b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureH(e),
+		# 	image=self.FlipHorzImage,padding=(0,1,0,1))
+		# b.grid(row=0,column=3,sticky='W')
+		# b.config(state='disabled')
+		# ToolTip(b, msg=12)
 
-		self.FlipVertImage = ImageTk.PhotoImage(image.rotate(90))
-		b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureV(e),
-			image=self.FlipVertImage,padding=(0,1,0,1))
-		b.grid(row=0,column=4,sticky='W',padx=5)
-		b.config(state='disabled')
-		ToolTip(b, msg=13)
+		# self.FlipVertImage = ImageTk.PhotoImage(image.rotate(90))
+		# b = ttk.Button(ButtonFrame,command=lambda e=None:self.FlipPictureV(e),
+		# 	image=self.FlipVertImage,padding=(0,1,0,1))
+		# b.grid(row=0,column=4,sticky='W',padx=5)
+		# b.config(state='disabled')
+		# ToolTip(b, msg=13)
 
-		## TODO: Need to make a tooltip
-		self.WriteTimestamps = MyBooleanVar(False)
-		b = ttk.Checkbutton(ButtonFrame, text='Timestamps', variable=self.WriteTimestamps)
-		b.grid(row=0,column=5,sticky='W')
-		#b.config(state='disabled')
-		ToolTip(b, msg=15)
+		# ## TODO: Need to make a tooltip
+		# self.WriteTimestamps = MyBooleanVar(True)
+		# b = ttk.Checkbutton(ButtonFrame, text='Timestamps', variable=self.WriteTimestamps)
+		# b.grid(row=0,column=5,sticky='W')
+		# #b.config(state='disabled')
+		# ToolTip(b, msg=15)
 
 		self.pw.add(self.TopFrame)
 		self.pw.add(BottomFrame)
@@ -672,7 +729,7 @@ class PiCameraApp ( Frame ):
 			# Set zoom of window.....
 			#### TODO: We should account for previous levels of zoom
 			x = float(coords[0]) / float(self.CurrentImageSize[0])
-			y = float(coords[1]) /  float(self.CurrentImageSize[1])
+			y = float(coords[1]) /	float(self.CurrentImageSize[1])
 			width = float(coords[2] - coords[0]) / float(self.CurrentImageSize[0])
 			height = float(coords[3] - coords[1]) / float(self.CurrentImageSize[1])
 			self.BasicControlsFrame.SetZoom (x,y,width,height)
@@ -792,6 +849,13 @@ class PiCameraApp ( Frame ):
 		'''
 			Implement Record Sequence
 		'''
+	def ToggleTracking(self):
+		if self.ComputeTracking.get() is True:
+			state = 'normal'
+		else:
+			state = 'disabled'
+		for fps in self.DiscreteComputeFPS:
+			fps.config(state=state)
 	def ToggleVideo ( self, event ):
 		if self.camera.framerate == 0 and \
 			PreferencesDialog.DefaultVideoFormat == 'h264':
@@ -804,6 +868,7 @@ class PiCameraApp ( Frame ):
 		self.InCaptureVideo = not self.InCaptureVideo
 
 		if self.InCaptureVideo:
+			print('Starting')
 			self.TakeVideo.config(text='Stop')
 			self.time = time()
 			#### TODO: do this as a stream. Can we then play it in
@@ -819,19 +884,35 @@ class PiCameraApp ( Frame ):
 				self.LogFileExtention = '.timestamp.log'
 
 			if self.VidFormat == 'h264':			    
-				self.video_handler = VideoHandler(self.camera, self.TempFile)
-			
+				self.video_handler = VideoHandler(self.camera, self.TempFile,
+								  tracking=self.ComputeTracking.get(),
+								  tacking_fps=self.ComputeFPSVar.get())
+
+				#if self.ComputeTracking.get() is True:
+				#	output = self.video_handler
+				#else:
+				#	output = self.TempFile
+					
 				self.camera.start_recording(output=self.video_handler,
-					format=self.VidFormat,profile=H264.Profile,level=H264.Level,
-					intra_period=H264.IntraPeriod,intra_refresh=H264.IntraRefresh,
-					inline_headers=H264.InlineHeaders,sei=H264.SEI,
-					sps_timing=H264.SPSTiming,motion_output=H264.MotionOutput)
-			elif self.VidFormat == 'yuv':
-				self.video_handler = CameraYUVStream(self.camera, self.TempFile)
-				self.camera.start_recording(output=self.video_handler, format='yuv')
+							    format=self.VidFormat,profile=H264.Profile,level=H264.Level,
+							    intra_period=H264.IntraPeriod,intra_refresh=H264.IntraRefresh,
+							    inline_headers=H264.InlineHeaders,sei=H264.SEI,
+							    sps_timing=H264.SPSTiming,motion_output=H264.MotionOutput)
+
+			#elif self.VidFormat == 'yuv':
+			#	self.video_handler = CameraYUVStream(self.camera, self.TempFile)
+			#	self.camera.start_recording(output=self.video_handler, format='yuv',
+			#				    tracking=self.ComputeTracking.get())
 				
 			else:	# generic - we can use anything
-				self.video_handler = VideoHandler(self.camera, self.TempFile)
+				self.video_handler = VideoHandler(self.camera, self.TempFile,
+								  tracking=self.ComputeTracking.get(),
+								  tracking_fps=self.ComputeFPSVar.get())
+				if self.ComputeTracking.get() is True:
+					output = self.video_handler
+				else:
+					output = self.TempFile
+				
 				self.camera.start_recording(output=self.video_handler,
 							    format=self.VidFormat)
 			self.photoCanvas.itemconfigure('capture',state='normal')
@@ -839,7 +920,6 @@ class PiCameraApp ( Frame ):
 		else:
 			self.TakeVideo.config(text='Video')
 			self.camera.stop_recording()
-			self.video_handler.close()
 			self.photoCanvas.itemconfigure('capture',state='hidden')
 			if PreferencesDialog.VideoTimestamp is True:
 				filename = 'Video_' + \
@@ -853,20 +933,30 @@ class PiCameraApp ( Frame ):
 				initialdir = PreferencesDialog.DefaultVideoDir,
 				initialfile = filename )
 			# This is wrong. I should rework this
-			if filename:
-				try:
-					os.rename(self.TempFile,filename)
-				except:
-					pass
-				if self.LogFileExtention:
-					os.rename(self.TempFile + self.LogFileExtention,
-						  filename + self.LogFileExtention)
-			else:
-				try:
-					os.remove(self.TempFile)
-					os.remove(self.TempFile + self.LogFileExtention)
+			try:
+				if filename:
+					self.video_handler.rename(filename)
+					try:
+						os.rename(self.TempFile,filename)
+					except:
+						pass
+					if self.LogFileExtention:
+						os.rename(self.TempFile + self.LogFileExtention,
+							  filename + self.LogFileExtention)
+					else:
+						try:
+							os.remove(self.TempFile)
+							os.remove(self.TempFile + self.LogFileExtention)
+							
+						except:
+							pass
+			except Exception as e:
+				print('Unknown naming error')
+				print(e)
+							
 				
-				except:	pass
+			self.video_handler.close()
+			
 	def UpdateCaptureInProgress ( self ):
 		if not self.InCaptureVideo: return
 		# keep updating video capture time
@@ -1000,7 +1090,7 @@ class PiCameraApp ( Frame ):
 							The Combobox is a problem.
 		Could save last two entries... if Combobox, Labelframe, Tk...
 		NO! this could be the Topwindow losing focus while the
-		Combobox has the focus.  The same effect
+		Combobox has the focus.	 The same effect
 		Also, the nesting may vary based on where the Combobox is in
 		the hierarcy. What I really want is to capture the <B1-Motion>
 		on the TopWindow titlebar - OR - get the widget ID to the
@@ -1150,7 +1240,8 @@ def Run ():
 		input()
 		return
 
-	win.minsize(1024,768)
+	#win.minsize(1024,768)
+	win.minsize(10,10)
 	app = PiCameraApp(win,camera,title="PiCamera")
 	win.mainloop()
 

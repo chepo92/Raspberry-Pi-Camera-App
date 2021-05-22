@@ -1,3 +1,19 @@
+'''
+video_reader.py
+Copyright (C) 2018 - Zachary Selk
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+'''
+
+
 #!/home/pi/.virtualenvs/cv2/bin/python3
 
 import cv2
@@ -40,23 +56,24 @@ class PassFrame():
         self.tracking.write(buf)
         
     def readFrames(self):
-        while self.reader.isOpened():
-            ret, frame = self.reader.read()
-            if not ret:
-                break
+        try:
+            while self.reader.isOpened():
+                ret, frame = self.reader.read()
+                if not ret:
+                    break
 
-            #print(frame.shape)
-            #buf = np.reshape(frame, -1, 'A').astype(np.uint8).tobytes()
-            cv2.imshow('Read', frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-            ret, buf = cv2.imencode('.png', frame)
-            Thread(target=self.sendFrame, kwargs={'buf': buf}).start()
-            time.sleep(1/self.camera.framerate)
-
-
-        self.reader.release()
-        self.tracking.close()
+                #print(frame.shape)
+                #buf = np.reshape(frame, -1, 'A').astype(np.uint8).tobytes()
+                #cv2.imshow('Read', frame)
+                #cv2.waitKey(0)
+                #if cv2.waitKey(1) & 0xFF == ord('q'):
+                #    break
+                ret, buf = cv2.imencode('.png', frame)
+                Thread(target=self.sendFrame, kwargs={'buf': buf}).start()
+                time.sleep(1/self.camera.framerate)
+        finally:                
+            self.reader.release()
+            self.tracking.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -74,5 +91,8 @@ if __name__ == '__main__':
     resolution= (int(args['height']), int(args['width']))
 
     setup = PassFrame(filename, framerate, resolution, fileout)
-    setup.readFrames()
+    try:
+        setup.readFrames()
+    except:
+        pass
     print("Done")

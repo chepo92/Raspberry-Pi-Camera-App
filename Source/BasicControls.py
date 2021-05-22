@@ -128,7 +128,7 @@ class BasicControls ( BasicNotepage ):
 							self.StandardResolutions[key][0],
 							self.StandardResolutions[key][1]))
 		self.FixedResolutionsCombo['values'] = vals
-		self.FixedResolutionsCombo.current(10)
+		self.FixedResolutionsCombo.current(2)
 
 		f2 = ttk.Frame(f)		# subframe to frame f
 		f2.grid(row=2,column=0,sticky='NSEW')
