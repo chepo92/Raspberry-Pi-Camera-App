@@ -3,7 +3,7 @@
   <a href=#><img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Logo.png" alt="banner"></a>
 </h1>
 
-<h4 align="center"> Descripción del proyecto en una linea </h4>
+<h4 align="center"> PiCameraApp: A graphical user interface (GUI) for the Picamera library written in Python using Tkinter / ttk. </h4>
 
 <p align="center">
     <a href="#">
@@ -31,7 +31,7 @@
 
 ## About
 
-Descripción larga
+PiCameraApp: A graphical user interface (GUI) for the Picamera library written in Python using Tkinter / ttk.
 
 <table>
 <tr>
