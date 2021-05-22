@@ -15,6 +15,7 @@ from threading import Thread
 
 import io
 import cv2
+import os
 
 import numpy as np
 
@@ -220,20 +221,24 @@ class VideoProcessing(Thread):
         file_type: What type of encoding is used on the buffers that will be
         passed for decoding
     """
-    def __init__(self, filename, height, width, framerate, file_type):
+    def __init__(self, filename, height, width, framerate, file_type, tracking=True):
         super(VideoProcessing, self).__init__()
         self._event = Event()
         self._tracker = Tracker()
         self._queue = Queue(maxsize=32)
         self._frame_number = 0
-
+        self._count = 0
+        
         self.filename = filename
         self.file_type = file_type
         self.framerate = framerate
         self.height = height
         self.width = width
         self.resolution = (width, height)
+        self.tracking = tracking
         self.background_frame = None
+        self.last_frame = None
+        self.last_box = None
 
         # Object detection algorithm perameters
         self.blob_params = None
@@ -266,6 +271,12 @@ class VideoProcessing(Thread):
         self._queue.put((buf, self._frame_number))
         self._frame_number += 1
         return len(buf)
+
+    def rename(self, new_name):
+        """Changes the filename of the video"""
+        new_name = '.'.join(new_name.split('.')[:-1]) + '.mp4'
+        os.rename(self.mp4_filename, new_name)
+        self.mp4_filename = new_name
 
     def run(self):
         """Runs the processes that have been queued up.
@@ -308,15 +319,31 @@ class VideoProcessing(Thread):
         """
         image = np.frombuffer(buf, dtype=np.uint8, count=len(buf))
         image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
-        _, box = self.background_frame_subtraction(image, 30, 900)
+        if self._frame_number % 30 != 0 or self.tracking is False:
+            if self.last_box is not None:                
+                box = self.last_box
+                cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
+                
+            #cv2.imshow('Image', image)
+            self.cv_write_video(image)
+            return
+        
+        frame, box = self.sequential_frame_subtraction(image, 30, 1500)
+        #frame, box = self.background_frame_subtraction(image, 30, 1500)
+        #frame, box = self.mog_subtraction(image, 30, 900)
+        #frame, box = self.blob_detection(image, 900)
+        #frame, box = self.gmg_subtraction(image, 2000)
+        if box is None:
+            box = self.last_box
 
         # If we detected something then hand it to the tracker
+        #if box is not None:
+        #    image = self._tracker.track(image, box)
         if box is not None:
-            image = self._tracker.track(image, box)
-
-        cv2.imshow('Image', image)
+            cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 255, 255), 2)
+        #cv2.imshow('Image', image)
         self.cv_write_video(image)
-        self._frame_number += 1
+        self.last_box = box
 
     def background_frame_subtraction(self, np_buffer, threshold, minimum_area):
         """Object detection using frame subtraction.
@@ -337,7 +364,7 @@ class VideoProcessing(Thread):
             then box is None.
         """
         frame = cv2.GaussianBlur(np_buffer, (21, 21), 0)
-        if self.background_frame is None:
+        if self.background_frame is None or self._frame_number % 100 == 0:
             print('Setting Background')
             self.background_frame = frame
 
@@ -346,7 +373,37 @@ class VideoProcessing(Thread):
         _, frame = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
         _, contours, _ = cv2.findContours(frame, cv2.RETR_LIST,
                                           cv2.CHAIN_APPROX_SIMPLE)
+        box = None
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area > minimum_area and area < 3500:
+                x_pos, y_pos, width, height = cv2.boundingRect(contour)
+                box = (x_pos, y_pos, x_pos+width, y_pos+height)
 
+                # Draws a rectangle onto the image
+                cv2.rectangle(frame, (x_pos, y_pos),
+                              (x_pos+width, y_pos+height), (255, 255, 255), 2)
+                break
+
+        return (frame, box)
+
+    def sequential_frame_subtraction(self, np_buffer, threshold, minimum_area):
+        frame = cv2.GaussianBlur(np_buffer, (5, 5), 0)
+        #frame = cv2.pyrDown(np_buffer)
+        
+        if self.last_frame is None:
+            self.last_frame = frame
+
+        
+        tmp = cv2.absdiff(frame, self.last_frame)
+        self.last_frame = frame
+        frame = tmp
+        #cv2.imshow('diff', frame)
+        
+        _, frame = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
+        _, contours, _ = cv2.findContours(frame, cv2.RETR_LIST,
+                                          cv2.CHAIN_APPROX_SIMPLE)
+        
         # We only look at the first item in the list
         #
         #                        ^
@@ -363,6 +420,7 @@ class VideoProcessing(Thread):
                 break
 
         return (frame, box)
+
 
     # Have not really used this
     def mog_subtraction(self, np_buffer, threshold, minimum_area):
@@ -420,30 +478,48 @@ class VideoProcessing(Thread):
             well as a list of tuples describing the center of each objected
             detected.
         """
+        if self._count < 50:
+            print(self._count)
+        self._count += 1        
         frame = np.reshape(np_buffer, (self.height, self.width))
+        #frame = cv2.GaussianBlur(frame, (7, 7), 0)        
         if self.kernel is None:
             self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         if self.gmg is None:
-            self.gmg = cv2.bgsegm.createBackgroundSubtractorGMG()
+            self.gmg = cv2.bgsegm.createBackgroundSubtractorGMG(initializationFrames=100,
+                                                                decisionThreshold=0.70)
 
         frame = self.gmg.apply(frame)
         frame = cv2.morphologyEx(frame, cv2.MORPH_OPEN, self.kernel)
         _, contours, _ = cv2.findContours(frame, cv2.RETR_LIST,
                                           cv2.CHAIN_APPROX_SIMPLE)
 
-        centers = []
+        # centers = []
+        # for contour in contours:
+        #     if cv2.contourArea(contour) > minimum_area:
+        #         x_pos, y_pos, width, height = cv2.boundingRect(contour)
+        #         cv2.rectangle(frame, (x_pos, y_pos),
+        #                       (x_pos+width, y_pos+height), (255, 255, 255), 2)
+
+        #         moments = cv2.moments(contour)
+        #         centers.append(((moments['m10'] / moments['m00']),
+        #                         (moments['m01'] / moments['m00'])))
+
+        # return (frame, centers)
+
+        box = None
         for contour in contours:
-            if cv2.contourArea(contour) > minimum_area:
+            area = cv2.contourArea(contour)
+            if area > minimum_area:
                 x_pos, y_pos, width, height = cv2.boundingRect(contour)
+                box = (x_pos, y_pos, x_pos+width, y_pos+height)
                 cv2.rectangle(frame, (x_pos, y_pos),
                               (x_pos+width, y_pos+height), (255, 255, 255), 2)
+                break
 
-                moments = cv2.moments(contour)
-                centers.append(((moments['m10'] / moments['m00']),
-                                (moments['m01'] / moments['m00'])))
 
-        return (frame, centers)
-
+        return (frame, box)
+        
 
     # Have not really used this
     def blob_detection(self, np_buffer, minimum_area):
@@ -465,28 +541,43 @@ class VideoProcessing(Thread):
         frame = np.reshape(np_buffer, (self.height, self.width))
         if self.blob_params is None:
             self.blob_params = cv2.SimpleBlobDetector_Params()
-            self.blob_params.minThreshold = 10
-            self.blob_params.maxThreshold = 200
+            self.blob_params.minThreshold = 5
+            self.blob_params.maxThreshold = 255
             self.blob_params.filterByArea = True
-            self.blob_params.minArea = minimum_area
+            self.blob_params.minArea = 30
             self.blob_params.filterByCircularity = True
-            self.blob_params.minCircularity = 0.5
+            self.blob_params.minCircularity = 0.1
             self.blob_params.filterByConvexity = True
-            self.blob_params.minConvexity = 0.5
+            self.blob_params.minConvexity = 0.1
             self.blob_params.filterByInertia = True
             self.blob_params.minInertiaRatio = 0.01
         if self.blob_detector is None:
             self.blob_detector = cv2.SimpleBlobDetector_create(self.blob_params)
 
-        centers = []
+        # centers = []
+        # blobs = self.blob_detector.detect(frame)
+        # for blob in blobs:
+        #     centers.append(blob.pt)
+
+        # frame = cv2.drawKeypoints(frame, blobs, np.array([]), (0, 0, 255))
+
+        # return (frame, centers)
+
+        box = None
         blobs = self.blob_detector.detect(frame)
         for blob in blobs:
-            centers.append(blob.pt)
+            print("Blob")
+            x_pos, y_pos, width, height = cv2.boundingRect(blob)
+            box = (x_pos, y_pos, x_pos+width, y_pos+height)
+            
+            # Draws a rectangle onto the image
+            cv2.rectangle(frame, (x_pos, y_pos),
+                         (x_pos+width, y_pos+height), (255, 255, 255), 2)
+            break
 
-        frame = cv2.drawKeypoints(frame, blobs, np.array([]), (0, 0, 255))
+        return (frame, box)        
 
-        return (frame, centers)
-
+        
     def flush(self):
         """Flushes the worker queue"""
         self._queue.join()
@@ -511,7 +602,7 @@ class VideoHandler(object):
         video_file: The file name/path for writing video to.
         log_file_extension: The name to appened to the timestamp file.
     """
-    def __init__(self, camera, video_file, log_file_extension='.timestamp.log'):
+    def __init__(self, camera, video_file, log_file_extension='.timestamp.log', tracking=True):
         self.camera = camera
         self.video_file = video_file
         self.log_file_extension = log_file_extension
@@ -520,6 +611,7 @@ class VideoHandler(object):
         self.height = camera.resolution.height
         self.width = camera.resolution.width
         self.framerate = camera.framerate
+        self.tracking = tracking
         if self.file_type == 'yuv':
             self.height = (self.height + 15) // 16 * 16
             self.width = (self.height + 15) // 16 * 16
@@ -527,7 +619,8 @@ class VideoHandler(object):
         self.frame_count = 0
         self.video = VideoProcessing(video_file, height=self.height,
                                      width=self.width, framerate=self.framerate,
-                                     file_type=self.file_type)
+                                     file_type=self.file_type,
+                                     tracking=self.tracking)
         self.log_stream = None
         if log_file_extension is not None:
             self.log_stream = io.open(video_file + log_file_extension, 'w')
@@ -556,6 +649,16 @@ class VideoHandler(object):
                 self.log_stream.write('%f\n' %(timestamp / 1000.0))
 
         self.frame_count += 1
+
+    def rename(self, new_name):
+        """Changes the name of the saved video.
+
+        Args:
+            new_name: The new name that the file will be changed to.
+        """
+        # Let the video processing unit take care of it
+        self.video.rename(new_name)
+        
     def flush(self):
         """Flushes the writing streams."""
         self.video_stream.flush()
