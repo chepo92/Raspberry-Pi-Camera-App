@@ -37,7 +37,7 @@ PiCameraApp: A graphical user interface (GUI) for the Picamera library written i
 <tr>
 <td>
 
-![Imagen/gif de preview](#)
+![Imagen/gif de preview](https://user-images.githubusercontent.com/3778024/36648609-43091bc0-1a5b-11e8-97c8-be0db1249a32.png)
 <p align="right">
 <sub>(Preview)</sub>
 </p>
